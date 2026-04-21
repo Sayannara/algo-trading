@@ -16,11 +16,11 @@ SOURCE_DONNEES = 'MT5'
 FICHIER_CSV = 'EURUSD-mars-2026.csv'
 
 # --- Paramètres pour MASSIVE (API en direct) ---
-MASSIVE_TICKER = "C:EURUSD"   # L'actif (C: pour les paires Forex)
-MASSIVE_DEBUT = "2026-01-15"  # Date de début
-MASSIVE_FIN = "2026-04-20"    # Date de fin
-MASSIVE_TF = "minute"         # Unité de temps (minute, hour, day)
-MASSIVE_MULT = 30             # Multiplicateur (ex: 5 minute = M5)
+MASSIVE_TICKER = "C:EURUSD"
+MASSIVE_DEBUT = "2026-01-15"
+MASSIVE_FIN = "2026-04-20"
+MASSIVE_TF = "minute"
+MASSIVE_MULT = 30
 
 # --- Paramètres pour MT5 ---
 MT5_SYMBOL = "EURUSD"
@@ -117,7 +117,7 @@ except Exception as e:
 
 ob_javascript = json.dumps(order_blocks, ensure_ascii=False)
 
-# 3. Trend Quality (Tendance)
+# 3. Trend Quality
 try:
     from indicators.trend_quality import calculer_trend_quality
     trend_data = calculer_trend_quality(df)
@@ -130,6 +130,16 @@ try:
 except Exception as e:
     print(f"⚠️ Erreur Trend Quality : {e}")
     trend_javascript = "null"
+
+# 4. Stratégie Tokyo Liquidity Demo
+try:
+    from strategies.tokyo_liquidity_demo import generer_strategie_tokyo_liquidity
+    strategy_trades = generer_strategie_tokyo_liquidity(df)
+except Exception as e:
+    print(f"⚠️ Erreur Stratégie Tokyo : {e}")
+    strategy_trades = []
+
+strategy_javascript = json.dumps(strategy_trades, ensure_ascii=False)
 
 # ─────────────────────────────────────────────────────────────
 # 3. GÉNÉRATION DE LA PAGE WEB
@@ -144,6 +154,7 @@ html_content = html_content.replace('{{donnees_javascript}}', donnees_javascript
 html_content = html_content.replace('{{sessions_javascript}}', sessions_javascript)
 html_content = html_content.replace('{{ob_javascript}}', ob_javascript)
 html_content = html_content.replace('{{trend_javascript}}', trend_javascript)
+html_content = html_content.replace('{{strategy_javascript}}', strategy_javascript)
 
 with open(HTML_FILE, 'w', encoding='utf-8') as f:
     f.write(html_content)
