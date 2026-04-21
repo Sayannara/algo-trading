@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Trading System - Indicateurs</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #131722; font-family: sans-serif; }
+        #chart { width: 100vw; height: 100vh; position: absolute; top:0; left:0; }
+        #controls { position: absolute; top: 15px; right: 15px; z-index: 10; display: flex; gap: 10px; }
+        .tv-button {
+            background-color: #2962FF; color: white; border: none;
+            padding: 8px 16px; border-radius: 4px; cursor: pointer; opacity: 0.9;
+        }
+        .tv-button:hover { opacity: 1; }
+        #log { position: fixed; top: 15px; left: 15px; z-index: 9999; color: white; background: rgba(0,0,0,0.7); padding: 8px 10px; font: 12px Arial, sans-serif; border-radius: 6px; }
+        #trend-dashboard {
+            position: absolute;
+            bottom: 25px;
+            right: 20px;
+            z-index: 20;
+            background: rgba(19, 23, 34, 0.8);
+            border: 1px solid #2B2B43;
+            border-radius: 6px;
+            padding: 12px 16px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .trend-title { font-size: 11px; color: #d1d4dc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .trend-value { font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="log">Chargement...</div>
+    <div id="controls">
+        <button id="toggle-sessions" class="tv-button">Masquer les Sessions</button>
+        <button id="toggle-ob" class="tv-button">Masquer les OB</button>
+    </div>
+    
+    <div id="trend-dashboard">
+        <div class="trend-title">Tendance Macro (<span id="trend-lookback"></span> j)</div>
+        <div class="trend-value" id="trend-text">En attente...</div>
+    </div>    
+
+    <div id="chart"></div>
+
+    <script>
+        // 1. RÉCUPÉRATION DES DONNÉES INJECTÉES PAR PYTHON
+        const candlesData = [{"time": 1776211200, "open": 1.17978, "high": 1.17985, "low": 1.179, "close": 1.17945}, {"time": 1776213000, "open": 1.1794, "high": 1.1795, "low": 1.1788, "close": 1.17937}, {"time": 1776214800, "open": 1.17937, "high": 1.1797, "low": 1.1788, "close": 1.17927}, {"time": 1776216600, "open": 1.17926, "high": 1.1794, "low": 1.1788, "close": 1.17904}, {"time": 1776218400, "open": 1.17904, "high": 1.1791, "low": 1.1781, "close": 1.17822}, {"time": 1776220200, "open": 1.17823, "high": 1.17843, "low": 1.1777, "close": 1.17831}, {"time": 1776222000, "open": 1.17831, "high": 1.1788, "low": 1.1778, "close": 1.17872}, {"time": 1776223800, "open": 1.17875, "high": 1.179, "low": 1.1784, "close": 1.17869}, {"time": 1776225600, "open": 1.17869, "high": 1.179, "low": 1.1785, "close": 1.17877}, {"time": 1776227400, "open": 1.17877, "high": 1.179, "low": 1.1785, "close": 1.17883}, {"time": 1776229200, "open": 1.17886, "high": 1.17983, "low": 1.1787, "close": 1.17923}, {"time": 1776231000, "open": 1.17926, "high": 1.17934, "low": 1.1788, "close": 1.17917}, {"time": 1776232800, "open": 1.17919, "high": 1.17993, "low": 1.1788, "close": 1.17913}, {"time": 1776234600, "open": 1.17915, "high": 1.1793, "low": 1.1782, "close": 1.1784}, {"time": 1776236400, "open": 1.1784, "high": 1.17883, "low": 1.1782, "close": 1.17873}, {"time": 1776238200, "open": 1.17877, "high": 1.17905, "low": 1.1783, "close": 1.17853}, {"time": 1776240000, "open": 1.17856, "high": 1.17953, "low": 1.1784, "close": 1.17919}, {"time": 1776241800, "open": 1.17919, "high": 1.1792, "low": 1.1784, "close": 1.1789}, {"time": 1776243600, "open": 1.17889, "high": 1.1792, "low": 1.17752, "close": 1.17841}, {"time": 1776245400, "open": 1.17841, "high": 1.1785, "low": 1.1777, "close": 1.17815}, {"time": 1776247200, "open": 1.17812, "high": 1.1787, "low": 1.1772, "close": 1.17755}, {"time": 1776249000, "open": 1.17755, "high": 1.17835, "low": 1.1771, "close": 1.17766}, {"time": 1776250800, "open": 1.17769, "high": 1.178, "low": 1.1774, "close": 1.17766}, {"time": 1776252600, "open": 1.17763, "high": 1.17842, "low": 1.17728, "close": 1.17829}, {"time": 1776254400, "open": 1.1783, "high": 1.1785, "low": 1.1775, "close": 1.17837}, {"time": 1776256200, "open": 1.17834, "high": 1.17927, "low": 1.1777, "close": 1.17877}, {"time": 1776258000, "open": 1.17878, "high": 1.17967, "low": 1.1784, "close": 1.17961}, {"time": 1776259800, "open": 1.17961, "high": 1.17975, "low": 1.1783, "close": 1.1788}, {"time": 1776261600, "open": 1.17877, "high": 1.17994, "low": 1.1783, "close": 1.17991}, {"time": 1776263400, "open": 1.17991, "high": 1.18001, "low": 1.1791, "close": 1.17965}, {"time": 1776265200, "open": 1.17964, "high": 1.1808, "low": 1.1793, "close": 1.18037}, {"time": 1776267000, "open": 1.18036, "high": 1.1804, "low": 1.1796, "close": 1.17977}, {"time": 1776268800, "open": 1.17978, "high": 1.1803, "low": 1.1796, "close": 1.18002}, {"time": 1776270600, "open": 1.18003, "high": 1.1803, "low": 1.1796, "close": 1.18006}, {"time": 1776272400, "open": 1.18009, "high": 1.18021, "low": 1.1797, "close": 1.17994}, {"time": 1776274200, "open": 1.17994, "high": 1.17995, "low": 1.1791, "close": 1.17949}, {"time": 1776276000, "open": 1.17945, "high": 1.1802, "low": 1.1792, "close": 1.17994}, {"time": 1776277800, "open": 1.17998, "high": 1.1802, "low": 1.1795, "close": 1.18001}, {"time": 1776279600, "open": 1.18003, "high": 1.1805, "low": 1.1797, "close": 1.18006}, {"time": 1776281400, "open": 1.18005, "high": 1.1804, "low": 1.1798, "close": 1.17996}, {"time": 1776283200, "open": 1.17998, "high": 1.18, "low": 1.1794, "close": 1.17973}, {"time": 1776285000, "open": 1.17974, "high": 1.1801, "low": 1.1793, "close": 1.1797}, {"time": 1776286800, "open": 1.1797, "high": 1.1803, "low": 1.1795, "close": 1.17982}, {"time": 1776288600, "open": 1.17962, "high": 1.1804, "low": 1.17947, "close": 1.17956}, {"time": 1776290400, "open": 1.17956, "high": 1.1804, "low": 1.17954, "close": 1.18008}, {"time": 1776292200, "open": 1.1801, "high": 1.1804, "low": 1.1799, "close": 1.18023}, {"time": 1776294000, "open": 1.18025, "high": 1.1807, "low": 1.1801, "close": 1.18035}, {"time": 1776295800, "open": 1.18034, "high": 1.1808, "low": 1.1801, "close": 1.18064}, {"time": 1776297600, "open": 1.18067, "high": 1.181, "low": 1.1801, "close": 1.18044}, {"time": 1776299400, "open": 1.1805, "high": 1.1808, "low": 1.1801, "close": 1.18071}, {"time": 1776301200, "open": 1.18066, "high": 1.18091, "low": 1.1802, "close": 1.18037}, {"time": 1776303000, "open": 1.18039, "high": 1.1806, "low": 1.1796, "close": 1.1802}, {"time": 1776304800, "open": 1.18024, "high": 1.1806, "low": 1.18, "close": 1.18039}, {"time": 1776306600, "open": 1.18037, "high": 1.1818, "low": 1.1803, "close": 1.18167}, {"time": 1776308400, "open": 1.18168, "high": 1.1824, "low": 1.1814, "close": 1.18153}, {"time": 1776310200, "open": 1.18152, "high": 1.18161, "low": 1.181, "close": 1.1812}, {"time": 1776312000, "open": 1.18129, "high": 1.1814, "low": 1.1809, "close": 1.18107}, {"time": 1776313800, "open": 1.18106, "high": 1.1812, "low": 1.1807, "close": 1.1809}, {"time": 1776315600, "open": 1.18094, "high": 1.181, "low": 1.1801, "close": 1.18041}, {"time": 1776317400, "open": 1.18042, "high": 1.1809, "low": 1.1802, "close": 1.18044}, {"time": 1776319200, "open": 1.18042, "high": 1.1807, "low": 1.1794, "close": 1.1797}, {"time": 1776321000, "open": 1.17973, "high": 1.18054, "low": 1.1792, "close": 1.18033}, {"time": 1776322800, "open": 1.18029, "high": 1.1805, "low": 1.1793, "close": 1.1798}, {"time": 1776324600, "open": 1.17976, "high": 1.17983, "low": 1.1789, "close": 1.17914}, {"time": 1776326400, "open": 1.17911, "high": 1.1794, "low": 1.1775, "close": 1.17799}, {"time": 1776328200, "open": 1.17795, "high": 1.17884, "low": 1.1778, "close": 1.17859}, {"time": 1776330000, "open": 1.17862, "high": 1.1788, "low": 1.1776, "close": 1.17786}, {"time": 1776331800, "open": 1.17786, "high": 1.1786, "low": 1.1776, "close": 1.17793}, {"time": 1776333600, "open": 1.17794, "high": 1.17803, "low": 1.1771, "close": 1.17729}, {"time": 1776335400, "open": 1.1773, "high": 1.17801, "low": 1.1771, "close": 1.17794}, {"time": 1776337200, "open": 1.17796, "high": 1.17887, "low": 1.1779, "close": 1.1786}, {"time": 1776339000, "open": 1.17859, "high": 1.17871, "low": 1.1779, "close": 1.17839}, {"time": 1776340800, "open": 1.1784, "high": 1.17844, "low": 1.1775, "close": 1.17815}, {"time": 1776342600, "open": 1.17807, "high": 1.1785, "low": 1.1775, "close": 1.17812}, {"time": 1776344400, "open": 1.17813, "high": 1.1784, "low": 1.1777, "close": 1.17811}, {"time": 1776346200, "open": 1.17809, "high": 1.17814, "low": 1.17667, "close": 1.17721}, {"time": 1776348000, "open": 1.17721, "high": 1.1779, "low": 1.1768, "close": 1.17784}, {"time": 1776349800, "open": 1.17783, "high": 1.17822, "low": 1.1768, "close": 1.17713}, {"time": 1776351600, "open": 1.17715, "high": 1.1781, "low": 1.1769, "close": 1.17745}, {"time": 1776353400, "open": 1.17745, "high": 1.17821, "low": 1.1772, "close": 1.17817}, {"time": 1776355200, "open": 1.17817, "high": 1.17871, "low": 1.1779, "close": 1.17806}, {"time": 1776357000, "open": 1.17806, "high": 1.17813, "low": 1.17681, "close": 1.17747}, {"time": 1776358800, "open": 1.17746, "high": 1.17754, "low": 1.1767, "close": 1.17709}, {"time": 1776360600, "open": 1.17709, "high": 1.17753, "low": 1.1769, "close": 1.17732}, {"time": 1776362400, "open": 1.17735, "high": 1.1781, "low": 1.1771, "close": 1.1777}, {"time": 1776364200, "open": 1.17779, "high": 1.1781, "low": 1.1776, "close": 1.17795}, {"time": 1776366000, "open": 1.17796, "high": 1.1785, "low": 1.1779, "close": 1.17834}, {"time": 1776367800, "open": 1.17833, "high": 1.1786, "low": 1.1779, "close": 1.17808}, {"time": 1776369600, "open": 1.17811, "high": 1.1783, "low": 1.1777, "close": 1.17805}, {"time": 1776371400, "open": 1.17803, "high": 1.1784, "low": 1.1779, "close": 1.1782}, {"time": 1776373200, "open": 1.1782, "high": 1.1782, "low": 1.17729, "close": 1.17816}, {"time": 1776375000, "open": 1.1781, "high": 1.1783, "low": 1.1776, "close": 1.1782}, {"time": 1776376800, "open": 1.17796, "high": 1.1788, "low": 1.1778, "close": 1.17853}, {"time": 1776378600, "open": 1.17853, "high": 1.1787, "low": 1.1783, "close": 1.1785}, {"time": 1776380400, "open": 1.17848, "high": 1.17862, "low": 1.1782, "close": 1.17854}, {"time": 1776382200, "open": 1.17853, "high": 1.1786, "low": 1.1779, "close": 1.178}, {"time": 1776384000, "open": 1.17807, "high": 1.1782, "low": 1.1776, "close": 1.17808}, {"time": 1776385800, "open": 1.17809, "high": 1.1783, "low": 1.1777, "close": 1.17787}, {"time": 1776387600, "open": 1.17787, "high": 1.178, "low": 1.1773, "close": 1.17749}, {"time": 1776389400, "open": 1.17755, "high": 1.1778, "low": 1.1773, "close": 1.1776}, {"time": 1776391200, "open": 1.17757, "high": 1.1777, "low": 1.1772, "close": 1.17756}, {"time": 1776393000, "open": 1.17756, "high": 1.1779, "low": 1.1773, "close": 1.17768}, {"time": 1776394800, "open": 1.17767, "high": 1.17792, "low": 1.1774, "close": 1.17756}, {"time": 1776396600, "open": 1.17756, "high": 1.17853, "low": 1.1774, "close": 1.17829}, {"time": 1776398400, "open": 1.17833, "high": 1.1785, "low": 1.178, "close": 1.17822}, {"time": 1776400200, "open": 1.17824, "high": 1.1785, "low": 1.178, "close": 1.17822}, {"time": 1776402000, "open": 1.17826, "high": 1.1785, "low": 1.1778, "close": 1.17839}, {"time": 1776403800, "open": 1.17839, "high": 1.17845, "low": 1.1779, "close": 1.17803}, {"time": 1776405600, "open": 1.17803, "high": 1.1783, "low": 1.1774, "close": 1.17749}, {"time": 1776407400, "open": 1.17751, "high": 1.1779, "low": 1.177, "close": 1.17749}, {"time": 1776409200, "open": 1.17746, "high": 1.1782, "low": 1.1773, "close": 1.17799}, {"time": 1776411000, "open": 1.17802, "high": 1.1783, "low": 1.1775, "close": 1.17823}, {"time": 1776412800, "open": 1.1782, "high": 1.17843, "low": 1.1779, "close": 1.17835}, {"time": 1776414600, "open": 1.17835, "high": 1.1796, "low": 1.1781, "close": 1.17936}, {"time": 1776416400, "open": 1.17938, "high": 1.17993, "low": 1.179, "close": 1.17986}, {"time": 1776418200, "open": 1.17982, "high": 1.1799, "low": 1.179, "close": 1.17932}, {"time": 1776420000, "open": 1.17934, "high": 1.1796, "low": 1.179, "close": 1.17937}, {"time": 1776421800, "open": 1.17941, "high": 1.1796, "low": 1.179, "close": 1.17942}, {"time": 1776423600, "open": 1.17942, "high": 1.17986, "low": 1.1791, "close": 1.17969}, {"time": 1776425400, "open": 1.1797, "high": 1.17994, "low": 1.179, "close": 1.17934}, {"time": 1776427200, "open": 1.17937, "high": 1.1809, "low": 1.1792, "close": 1.18045}, {"time": 1776429000, "open": 1.18049, "high": 1.18374, "low": 1.18036, "close": 1.18353}, {"time": 1776430800, "open": 1.18352, "high": 1.18492, "low": 1.18297, "close": 1.18344}, {"time": 1776432600, "open": 1.18343, "high": 1.18433, "low": 1.18239, "close": 1.18332}, {"time": 1776434400, "open": 1.18336, "high": 1.18359, "low": 1.18193, "close": 1.18262}, {"time": 1776436200, "open": 1.18263, "high": 1.18319, "low": 1.18129, "close": 1.18133}, {"time": 1776438000, "open": 1.18136, "high": 1.18165, "low": 1.17995, "close": 1.1804}, {"time": 1776439800, "open": 1.18041, "high": 1.18103, "low": 1.1798, "close": 1.18008}, {"time": 1776441600, "open": 1.18003, "high": 1.1805, "low": 1.1791, "close": 1.17983}, {"time": 1776443400, "open": 1.17986, "high": 1.1802, "low": 1.1796, "close": 1.17988}, {"time": 1776445200, "open": 1.17984, "high": 1.17985, "low": 1.17843, "close": 1.17892}, {"time": 1776447000, "open": 1.17892, "high": 1.1796, "low": 1.1787, "close": 1.1795}, {"time": 1776448800, "open": 1.17948, "high": 1.17974, "low": 1.1787, "close": 1.1791}, {"time": 1776450600, "open": 1.17913, "high": 1.1794, "low": 1.1773, "close": 1.17796}, {"time": 1776452400, "open": 1.17798, "high": 1.1784, "low": 1.1773, "close": 1.17751}, {"time": 1776454200, "open": 1.17753, "high": 1.17764, "low": 1.1766, "close": 1.17685}, {"time": 1776456000, "open": 1.1769, "high": 1.1772, "low": 1.1763, "close": 1.17638}, {"time": 1776457800, "open": 1.17642, "high": 1.17691, "low": 1.17597, "close": 1.1765}, {"time": 1776632400, "open": 1.1738, "high": 1.1743, "low": 1.1737, "close": 1.1743}, {"time": 1776634200, "open": 1.1739, "high": 1.1743, "low": 1.17292, "close": 1.1731}, {"time": 1776636000, "open": 1.17302, "high": 1.17394, "low": 1.1727, "close": 1.1731}, {"time": 1776637800, "open": 1.17316, "high": 1.174, "low": 1.1731, "close": 1.17389}, {"time": 1776639600, "open": 1.17397, "high": 1.17453, "low": 1.1738, "close": 1.17416}, {"time": 1776641400, "open": 1.17416, "high": 1.17452, "low": 1.1735, "close": 1.17384}];
+        const sessionsData = [{"title": "Tokyo", "color_bg": "rgba(206, 147, 216, 0.15)", "color_border": "rgba(206, 147, 216, 0.8)", "border_style": "dashed", "start": 1776211200, "end": 1776238200, "max_p": 1.17993, "min_p": 1.1777}, {"title": "London", "color_bg": "rgba(244, 67, 54, 0.15)", "color_border": "rgba(244, 67, 54, 0.8)", "border_style": "dashed", "start": 1776240000, "end": 1776259800, "max_p": 1.17975, "min_p": 1.1771}, {"title": "New York", "color_bg": "rgba(0, 188, 212, 0.15)", "color_border": "rgba(0, 188, 212, 0.8)", "border_style": "dashed", "start": 1776261600, "end": 1776295800, "max_p": 1.1808, "min_p": 1.1783}, {"title": "Tokyo", "color_bg": "rgba(206, 147, 216, 0.15)", "color_border": "rgba(206, 147, 216, 0.8)", "border_style": "dashed", "start": 1776297600, "end": 1776324600, "max_p": 1.1824, "min_p": 1.1789}, {"title": "London", "color_bg": "rgba(244, 67, 54, 0.15)", "color_border": "rgba(244, 67, 54, 0.8)", "border_style": "dashed", "start": 1776326400, "end": 1776346200, "max_p": 1.1794, "min_p": 1.17667}, {"title": "New York", "color_bg": "rgba(0, 188, 212, 0.15)", "color_border": "rgba(0, 188, 212, 0.8)", "border_style": "dashed", "start": 1776348000, "end": 1776382200, "max_p": 1.1788, "min_p": 1.1767}, {"title": "Tokyo", "color_bg": "rgba(206, 147, 216, 0.15)", "color_border": "rgba(206, 147, 216, 0.8)", "border_style": "dashed", "start": 1776384000, "end": 1776411000, "max_p": 1.17853, "min_p": 1.177}, {"title": "London", "color_bg": "rgba(244, 67, 54, 0.15)", "color_border": "rgba(244, 67, 54, 0.8)", "border_style": "dashed", "start": 1776412800, "end": 1776432600, "max_p": 1.18492, "min_p": 1.1779}, {"title": "New York", "color_bg": "rgba(0, 188, 212, 0.15)", "color_border": "rgba(0, 188, 212, 0.8)", "border_style": "dashed", "start": 1776434400, "end": 1776641400, "max_p": 1.18359, "min_p": 1.1727}];
+        const obData = [{"title": "Bullish OB", "start": 1776425400, "end": 1776641400, "max_p": 1.17994, "min_p": 1.179, "color_bg": "rgba(8, 153, 129, 0.15)", "color_border": "rgba(8, 153, 129, 0.9)", "border_style": "solid"}, {"title": "Bearish OB", "start": 1776447000, "end": 1776641400, "max_p": 1.1796, "min_p": 1.1787, "color_bg": "rgba(242, 54, 69, 0.15)", "color_border": "rgba(242, 54, 69, 0.9)"}];
+        const trendData = {"score": 18.666666666666664, "text": "Forte Baissière (18.7%)", "color": "#FF5252", "lookback": 6};
+
+        // 2. DÉFINITION DE LA PRIMITIVE DE DESSIN
+        class ZoneBackgroundPaneView {
+            constructor() { this._zones = []; this._chart = null; this._series = null; }
+            update(zones, chart, series) { this._zones = zones; this._chart = chart; this._series = series; }
+            renderer() {
+                return {
+                    draw: (target) => {
+                        if (!this._chart || !this._series) return;
+                        target.useMediaCoordinateSpace((scope) => {
+                            const ctx = scope.context;
+                            const timeScale = this._chart.timeScale();
+                            this._zones.forEach(zone => {
+                                try {
+                                    if (zone.max_p == null || zone.min_p == null) return;
+                                    const startX = timeScale.timeToCoordinate(zone.start);
+                                    const endX   = timeScale.timeToCoordinate(zone.end);
+                                    const topY   = this._series.priceToCoordinate(zone.max_p);
+                                    const bottomY = this._series.priceToCoordinate(zone.min_p);
+                                    
+                                    if (startX === null || endX === null || topY === null || bottomY === null) return;
+                                    
+                                    const left   = Math.min(startX, endX);
+                                    const width  = Math.max(Math.abs(endX - startX), 1);
+                                    const y      = Math.min(topY, bottomY);
+                                    const height = Math.abs(bottomY - topY);
+                                    
+                                    // --- GESTION DYNAMIQUE DU STYLE ---
+                                    ctx.fillStyle = zone.color_bg;
+                                    ctx.fillRect(left - 5, y - 5, width + 10, height + 10);
+                                    
+                                    ctx.strokeStyle = zone.color_border;
+                                    ctx.lineWidth = 1;
+                                    
+                                    // Lecture de la propriété border_style injectée par Python
+                                    if (zone.border_style === 'dashed') {
+                                        ctx.setLineDash([4, 4]);
+                                    } else {
+                                        ctx.setLineDash([]);
+                                    }
+                                    
+                                    ctx.strokeRect(left - 5, y - 5, width + 10, height + 10);
+                                    ctx.setLineDash([]); // Remise à zéro pour les autres dessins
+                                    
+                                } catch (e) {}
+                            });
+                        });
+                    }
+                };
+            }
+            zOrder() { return 'bottom'; }
+        }
+
+        class ZoneBackgroundPrimitive {
+            constructor() { this._paneView = new ZoneBackgroundPaneView(); this._zones = []; }
+            updateAllViews() {
+                this._paneView.update(this._zones, this._chart, this._series);
+                if (this.requestUpdate) this.requestUpdate();
+            }
+            paneViews() { return [this._paneView]; }
+            priceAxisViews() { return []; }
+            timeAxisViews() { return []; }
+            setZones(zones) { this._zones = zones; this.updateAllViews(); }
+            attached(param) { this.requestUpdate = param.requestUpdate; this._chart = param.chart; this._series = param.series; this.updateAllViews(); }
+            detached() { this.requestUpdate = undefined; this._chart = null; this._series = null; }
+        }
+
+        // 3. INITIALISATION DU GRAPHIQUE
+        try {
+            const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+                autoSize: true,
+                layout: { background: { type: 'solid', color: '#131722' }, textColor: '#d1d4dc' },
+                grid: { vertLines: { color: '#2B2B43' }, horzLines: { color: '#2B2B43' } },
+                timeScale: { timeVisible: true, secondsVisible: false },
+                localization: { locale: 'fr-FR' },
+                rightPriceScale: { autoScale: true },
+            });
+
+            const series = chart.addCandlestickSeries({
+                upColor: '#26a69a', downColor: '#ef5350',
+                borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+                wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+                priceFormat: {
+                    type: 'price',
+                    precision: 5,        // Précision pour le Forex
+                    minMove: 0.00001,
+                }
+            });
+
+            series.setData(candlesData);
+            
+            // 4. ATTACHEMENT SESSIONS
+            const sessionPrimitive = new ZoneBackgroundPrimitive();
+            if (sessionsData && sessionsData.length > 0) {
+                sessionPrimitive.setZones(sessionsData);
+                series.attachPrimitive(sessionPrimitive);
+            }
+
+            // 5. ATTACHEMENT ORDER BLOCKS
+            const obPrimitive = new ZoneBackgroundPrimitive();
+            if (obData && obData.length > 0) {
+                obPrimitive.setZones(obData);
+                series.attachPrimitive(obPrimitive);
+            }
+
+            // 6. GESTION DES BOUTONS
+            let sessionsVisible = true;
+            document.getElementById('toggle-sessions').addEventListener('click', (e) => {
+                if (sessionsVisible) {
+                    series.detachPrimitive(sessionPrimitive);
+                    e.target.innerText = "Afficher les Sessions";
+                } else {
+                    series.attachPrimitive(sessionPrimitive);
+                    e.target.innerText = "Masquer les Sessions";
+                }
+                sessionsVisible = !sessionsVisible;
+            });
+
+            let obVisible = true;
+            document.getElementById('toggle-ob').addEventListener('click', (e) => {
+                if (obVisible) {
+                    series.detachPrimitive(obPrimitive);
+                    e.target.innerText = "Afficher les OB";
+                } else {
+                    series.attachPrimitive(obPrimitive);
+                    e.target.innerText = "Masquer les OB";
+                }
+                obVisible = !obVisible;
+            });
+
+            // 7. TABLEAU DE BORD TENDANCE
+            if (trendData && trendData.text) {
+                const dashboard = document.getElementById('trend-dashboard');
+                dashboard.style.display = 'block';
+                
+                const lookbackEl = document.getElementById('trend-lookback');
+                if (lookbackEl) lookbackEl.innerText = trendData.lookback;
+                
+                const trendTextEl = document.getElementById('trend-text');
+                if (trendTextEl) {
+                    trendTextEl.innerText = trendData.text;
+                    trendTextEl.style.color = trendData.color;
+                }
+            }
+
+            chart.timeScale().fitContent();
+            
+            const log = document.getElementById('log');
+            if (log) {
+                log.textContent = 'OK - ' + candlesData.length + ' bougies chargées';
+                setTimeout(() => { log.style.display = 'none'; }, 3000);
+            }
+
+        } catch (e) {
+            console.error("Erreur de rendu:", e);
+            const log = document.getElementById('log');
+            if (log) log.textContent = 'Erreur Javascript: ' + e.message;
+        }
+    </script>
+</body>
+</html>
