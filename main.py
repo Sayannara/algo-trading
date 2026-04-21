@@ -24,8 +24,8 @@ MASSIVE_MULT = 30             # Multiplicateur (ex: 5 minute = M5)
 
 # --- Paramètres pour MT5 ---
 MT5_SYMBOL = "EURUSD"
-MT5_DEBUT = "2025-01-15"
-MT5_FIN = "2026-04-20"
+MT5_DEBUT = "2026-01-15"
+MT5_FIN = "2026-04-21"
 MT5_TF = "M30"
 
 # ─────────────────────────────────────────────────────────────
