@@ -8,26 +8,32 @@ os.system('cls' if os.name == 'nt' else 'clear')
 # ─────────────────────────────────────────────────────────────
 # 🛠️ CONFIGURATION GLOBALE
 # ─────────────────────────────────────────────────────────────
-# Choisissez votre source de données parmi : 'HISTDATA' ou 'MASSIVE'
-SOURCE_DONNEES = 'MASSIVE'
+
+# Choisissez votre source de données parmi : 'HISTDATA', 'MASSIVE' ou 'MT5'
+SOURCE_DONNEES = 'MT5'
 
 # --- Paramètres pour HISTDATA (Fichier Local) ---
 FICHIER_CSV = 'EURUSD-mars-2026.csv'
 
 # --- Paramètres pour MASSIVE (API en direct) ---
-MASSIVE_TICKER = "C:EURUSD"     # L'actif (C: pour les paires Forex)
-MASSIVE_DEBUT  = "2026-04-15"   # Date de début
-MASSIVE_FIN    = "2026-04-20"   # Date de fin (ex: tester sur 5 jours)
-MASSIVE_TF     = "minute"       # Unité de temps (minute, hour, day)
-MASSIVE_MULT   = 30             # Multiplicateur (ex: 5 minute = M5)
+MASSIVE_TICKER = "C:EURUSD"   # L'actif (C: pour les paires Forex)
+MASSIVE_DEBUT = "2026-01-15"  # Date de début
+MASSIVE_FIN = "2026-04-20"    # Date de fin
+MASSIVE_TF = "minute"         # Unité de temps (minute, hour, day)
+MASSIVE_MULT = 30             # Multiplicateur (ex: 5 minute = M5)
 
+# --- Paramètres pour MT5 ---
+MT5_SYMBOL = "EURUSD"
+MT5_DEBUT = "2025-01-15"
+MT5_FIN = "2026-04-20"
+MT5_TF = "M30"
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURATION DES CHEMINS SYSTÈMES
 # ─────────────────────────────────────────────────────────────
-DOSSIER_RACINE  = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE_FILE   = os.path.join(DOSSIER_RACINE, 'templates', 'chart_execution_template.html')
-HTML_FILE       = os.path.join(DOSSIER_RACINE, 'output.html')
+DOSSIER_RACINE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_FILE = os.path.join(DOSSIER_RACINE, 'templates', 'chart_execution_template.html')
+HTML_FILE = os.path.join(DOSSIER_RACINE, 'output.html')
 
 # ─────────────────────────────────────────────────────────────
 # 1. RÉCUPÉRATION DES DONNÉES (Routage dynamique)
@@ -35,20 +41,33 @@ HTML_FILE       = os.path.join(DOSSIER_RACINE, 'output.html')
 df = None
 
 if SOURCE_DONNEES == 'HISTDATA':
-    print(f"📡 SOURCE SÉLECTIONNÉE : HISTDATA (Fichier local)")
+    print("📡 SOURCE SÉLECTIONNÉE : HISTDATA (Fichier local)")
     from loaders.histdata import charger_donnees
+
     chemin_csv = os.path.join(DOSSIER_RACINE, 'data', FICHIER_CSV)
     df = charger_donnees(chemin_csv)
 
 elif SOURCE_DONNEES == 'MASSIVE':
-    print(f"📡 SOURCE SÉLECTIONNÉE : MASSIVE (API en direct)")
+    print("📡 SOURCE SÉLECTIONNÉE : MASSIVE (API en direct)")
     from loaders.massive import charger_donnees
+
     df = charger_donnees(
         ticker=MASSIVE_TICKER,
         date_from=MASSIVE_DEBUT,
         date_to=MASSIVE_FIN,
         multiplier=MASSIVE_MULT,
         timespan=MASSIVE_TF
+    )
+
+elif SOURCE_DONNEES == 'MT5':
+    print("📡 SOURCE SÉLECTIONNÉE : MT5")
+    from loaders.mt5 import charger_donnees
+
+    df = charger_donnees(
+        symbol=MT5_SYMBOL,
+        date_from=MT5_DEBUT,
+        date_to=MT5_FIN,
+        timeframe=MT5_TF
     )
 
 else:
@@ -70,8 +89,8 @@ for row in df.itertuples(index=False):
         'low': float(row.Low),
         'close': float(row.Close),
     })
-donnees_javascript = json.dumps(candles, ensure_ascii=False)
 
+donnees_javascript = json.dumps(candles, ensure_ascii=False)
 
 # ─────────────────────────────────────────────────────────────
 # 2. CALCUL DES INDICATEURS
@@ -85,6 +104,7 @@ try:
 except Exception as e:
     print(f"⚠️ Erreur Sessions : {e}")
     sessions = []
+
 sessions_javascript = json.dumps(sessions, ensure_ascii=False)
 
 # 2. Order Blocks
@@ -94,26 +114,28 @@ try:
 except Exception as e:
     print(f"⚠️ Erreur Order Blocks : {e}")
     order_blocks = []
+
 ob_javascript = json.dumps(order_blocks, ensure_ascii=False)
 
 # 3. Trend Quality (Tendance)
 try:
     from indicators.trend_quality import calculer_trend_quality
     trend_data = calculer_trend_quality(df)
-    
+
     if trend_data is None:
         trend_javascript = "null"
     else:
         trend_javascript = json.dumps(trend_data, ensure_ascii=False)
+
 except Exception as e:
     print(f"⚠️ Erreur Trend Quality : {e}")
     trend_javascript = "null"
 
-
 # ─────────────────────────────────────────────────────────────
 # 3. GÉNÉRATION DE LA PAGE WEB
 # ─────────────────────────────────────────────────────────────
-print(f"📄 Lecture du template...")
+print("📄 Lecture du template...")
+
 with open(TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     html_content = f.read()
 

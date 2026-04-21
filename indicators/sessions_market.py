@@ -1,12 +1,17 @@
 import pandas as pd
 
 def obtenir_info_session(heure):
+    """
+    Définit le nom, la couleur de fond et la couleur de bordure des sessions.
+    Fond léger (0.1) et couleurs bien distinctes (Violet, Orange, Bleu).
+    Pas de bordure ('transparent').
+    """
     if 0 <= heure < 8:
-        return 'Tokyo', 'rgba(206, 147, 216, 0.15)', 'rgba(206, 147, 216, 0.8)'
+        return 'Tokyo', 'rgba(156, 39, 176, 0.1)', 'transparent'    # Violet
     elif 8 <= heure < 14:
-        return 'London', 'rgba(244, 67, 54, 0.15)', 'rgba(244, 67, 54, 0.8)'
+        return 'London', 'rgba(255, 87, 34, 0.1)', 'transparent'    # Orange
     else:
-        return 'New York', 'rgba(0, 188, 212, 0.15)', 'rgba(0, 188, 212, 0.8)'
+        return 'New York', 'rgba(33, 150, 243, 0.1)', 'transparent' # Bleu
 
 def calculer_sessions(df):
     blocs_sessions = []
@@ -20,7 +25,6 @@ def calculer_sessions(df):
         dt = row['time'] 
         nom_session, couleur_bg, couleur_border = obtenir_info_session(dt.hour)
         
-        # CHANGEMENT CRUCIAL : On utilise le timestamp UNIX au lieu du texte
         temps_unix = int(dt.timestamp())
         
         if nom_session != session_en_cours:
@@ -32,10 +36,10 @@ def calculer_sessions(df):
                 'title': nom_session,
                 'color_bg': couleur_bg,
                 'color_border': couleur_border,
-                'border_style': 'dashed',
+                'border_style': 'solid', 
                 'start': temps_unix,
                 'end': temps_unix,
-                'max_p': row['High'],  # Majuscule (venant de notre loader)
+                'max_p': row['High'],
                 'min_p': row['Low']
             }
         else:
