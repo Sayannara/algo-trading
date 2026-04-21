@@ -1,176 +1,151 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trading System - Indicateurs</title>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <style>
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #131722; font-family: sans-serif; overflow: hidden; }
-        #chart { width: 100vw; height: 100vh; position: absolute; inset: 0; }
-        #controls { position: absolute; top: 15px; right: 15px; z-index: 20; display: flex; gap: 10px; flex-wrap: wrap; }
-        .tv-button { background-color: #2962FF; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; opacity: 0.9; font-size: 13px; }
-        .tv-button:hover { opacity: 1; }
-        #log { position: fixed; top: 15px; left: 15px; z-index: 9999; color: white; background: rgba(0, 0, 0, 0.7); padding: 8px 10px; font: 12px Arial, sans-serif; border-radius: 6px; }
-        #trend-dashboard { position: absolute; bottom: 25px; right: 20px; z-index: 20; background: rgba(19, 23, 34, 0.85); border: 1px solid #2B2B43; border-radius: 6px; padding: 12px 16px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: none; min-width: 160px; }
-        .trend-title { font-size: 11px; color: #d1d4dc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .trend-value { font-size: 16px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div id="chart"></div>
-    <div id="log">Chargement...</div>
-    <div id="controls">
-        <button id="toggle-sessions" class="tv-button">Masquer les Sessions</button>
-        <button id="toggle-ob" class="tv-button">Masquer les OB</button>
-    </div>
-    <div id="trend-dashboard">
-        <div class="trend-title">Tendance Macro (<span id="trend-lookback">?</span> j)</div>
-        <div id="trend-text" class="trend-value">En attente...</div>
-    </div>
+import pandas as pd
+from indicators.sessions_market import calculer_sessions
 
-    <script>
-        const candlesData = {{donnees_javascript}};
-        const sessionsData = {{sessions_javascript}};
-        const obData = {{ob_javascript}};
-        const trendData = {{trend_javascript}};
-        const strategyData = {{strategy_javascript}};
+LOT_SIZE = 5.0
+FORCED_CLOSE_HOUR = 23
 
-        class ZoneBackgroundPaneView {
-            constructor() { this._zones = []; this._chart = null; this._series = null; }
-            update(zones, chart, series) { this._zones = zones; this._chart = chart; this._series = series; }
-            renderer() {
-                return {
-                    draw: (target) => {
-                        if (!this._chart || !this._series) return;
-                        target.useMediaCoordinateSpace((scope) => {
-                            const ctx = scope.context;
-                            const timeScale = this._chart.timeScale();
-                            this._zones.forEach(zone => {
-                                try {
-                                    if (zone.max_p == null || zone.min_p == null) return;
-                                    const startX = timeScale.timeToCoordinate(zone.start);
-                                    const endX = timeScale.timeToCoordinate(zone.end);
-                                    const topY = this._series.priceToCoordinate(zone.max_p);
-                                    const bottomY = this._series.priceToCoordinate(zone.min_p);
-                                    if (startX === null || endX === null || topY === null || bottomY === null) return;
+def generer_strategie_tokyo_liquidity(df):
+    trades = []
 
-                                    const left = Math.min(startX, endX);
-                                    const width = Math.max(Math.abs(endX - startX), 1);
-                                    const y = Math.min(topY, bottomY);
-                                    const height = Math.abs(bottomY - topY);
+    if df is None or df.empty:
+        print("⚠️ DataFrame vide pour la stratégie Tokyo.")
+        return trades
 
-                                    ctx.fillStyle = zone.color_bg;
-                                    ctx.fillRect(left - 5, y - 5, width + 10, height + 10);
-                                    ctx.strokeStyle = zone.color_border;
-                                    ctx.lineWidth = 1;
-                                    if (zone.border_style === 'dashed') ctx.setLineDash([4, 4]);
-                                    else ctx.setLineDash([]);
-                                    ctx.strokeRect(left - 5, y - 5, width + 10, height + 10);
-                                    ctx.setLineDash([]);
-                                } catch (e) {}
-                            });
-                        });
-                    }
-                };
-            }
-            zOrder() { return 'bottom'; }
-        }
+    df = df.copy().sort_values("time").reset_index(drop=True)
+    sessions = calculer_sessions(df)
+    tokyo_sessions = [s for s in sessions if s.get("title") == "Tokyo"]
 
-        class ZoneBackgroundPrimitive {
-            constructor() { this._paneView = new ZoneBackgroundPaneView(); this._zones = []; }
-            updateAllViews() { this._paneView.update(this._zones, this._chart, this._series); if (this.requestUpdate) this.requestUpdate(); }
-            paneViews() { return [this._paneView]; }
-            priceAxisViews() { return []; }
-            timeAxisViews() { return []; }
-            setZones(zones) { this._zones = zones; this.updateAllViews(); }
-            attached(param) { this.requestUpdate = param.requestUpdate; this._chart = param.chart; this._series = param.series; this.updateAllViews(); }
-            detached() { this.requestUpdate = undefined; this._chart = null; this._series = null; }
-        }
+    print(f"🟣 Tokyo sessions détectées : {len(tokyo_sessions)}")
 
-        try {
-            const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-                autoSize: true,
-                layout: { background: { type: 'solid', color: '#131722' }, textColor: '#d1d4dc' },
-                grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-                timeScale: { timeVisible: true, secondsVisible: false },
-                localization: { locale: 'fr-FR' },
-                rightPriceScale: { autoScale: true },
-            });
+    if not tokyo_sessions:
+        return trades
 
-            const series = chart.addSeries(LightweightCharts.CandlestickSeries, {
-                upColor: '#26a69a', downColor: '#ef5350', borderUpColor: '#26a69a', borderDownColor: '#ef5350', wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-                priceFormat: { type: 'price', precision: 5, minMove: 0.00001 }
-            });
+    for tokyo in tokyo_sessions:
+        tokyo_start = pd.to_datetime(tokyo["start"], unit="s", utc=True)
+        tokyo_end = pd.to_datetime(tokyo["end"], unit="s", utc=True)
+        tokyo_high = float(tokyo["max_p"])
+        tokyo_low = float(tokyo["min_p"])
+        same_day = tokyo_start.date()
 
-            series.setData(candlesData);
+        post_tokyo = df[
+            (df["time"] > tokyo_end) &
+            (df["time"].dt.date == same_day)
+        ].copy()
 
-            const sessionPrimitive = new ZoneBackgroundPrimitive();
-            if (sessionsData && sessionsData.length > 0) { sessionPrimitive.setZones(sessionsData); series.attachPrimitive(sessionPrimitive); }
+        if post_tokyo.empty:
+            continue
 
-            const obPrimitive = new ZoneBackgroundPrimitive();
-            if (obData && obData.length > 0) { obPrimitive.setZones(obData); series.attachPrimitive(obPrimitive); }
+        trade = None
 
-            const markers = [];
-            if (strategyData && strategyData.length > 0) {
-                strategyData.forEach(trade => {
-                    markers.push({
-                        time: trade.sweep_time,
-                        position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
-                        color: trade.direction === 'short' ? '#ff6b6b' : '#51cf66',
-                        shape: 'circle',
-                        text: trade.direction === 'short' ? 'Sweep Sell' : 'Sweep Buy'
-                    });
-                    markers.push({
-                        time: trade.exit_time,
-                        position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
-                        color: trade.exit_reason === 'TP' ? '#4dabf7' : (trade.exit_reason === 'SL' ? '#ffd43b' : '#ced4da'),
-                        shape: 'square',
-                        text: trade.exit_reason
-                    });
-                });
-                if (series.setMarkers) {
-                    markers.sort((a, b) => a.time - b.time);
-                    series.setMarkers(markers);
+        for _, row in post_tokyo.iterrows():
+            t = row["time"]
+            high = float(row["High"])
+            low = float(row["Low"])
+            close = float(row["Close"])
+
+            if t.hour >= FORCED_CLOSE_HOUR:
+                break
+
+            if high > tokyo_high:
+                trade = {
+                    "strategy": "Tokyo Liquidity Demo",
+                    "session_date": str(same_day),
+                    "direction": "short",
+                    "lots": LOT_SIZE,
+                    "sweep_type": "tokyo_high_taken",
+                    "sweep_time": int(t.timestamp()),
+                    "entry_time": int(t.timestamp()),
+                    "entry": tokyo_high,
+                    "sl": tokyo_high * 1.01,
+                    "tp": tokyo_low,
+                    "tokyo_high": tokyo_high,
+                    "tokyo_low": tokyo_low,
+                    "exit_time": None,
+                    "exit_price": None,
+                    "exit_reason": None,
                 }
-            }
+                break
 
-            let sessionsVisible = true;
-            document.getElementById('toggle-sessions').addEventListener('click', (e) => {
-                if (sessionsVisible) { series.detachPrimitive(sessionPrimitive); e.target.innerText = "Afficher les Sessions"; }
-                else { series.attachPrimitive(sessionPrimitive); e.target.innerText = "Masquer les Sessions"; }
-                sessionsVisible = !sessionsVisible;
-            });
+            if low < tokyo_low:
+                trade = {
+                    "strategy": "Tokyo Liquidity Demo",
+                    "session_date": str(same_day),
+                    "direction": "long",
+                    "lots": LOT_SIZE,
+                    "sweep_type": "tokyo_low_taken",
+                    "sweep_time": int(t.timestamp()),
+                    "entry_time": int(t.timestamp()),
+                    "entry": tokyo_low,
+                    "sl": tokyo_low * 0.99,
+                    "tp": tokyo_high,
+                    "tokyo_high": tokyo_high,
+                    "tokyo_low": tokyo_low,
+                    "exit_time": None,
+                    "exit_price": None,
+                    "exit_reason": None,
+                }
+                break
 
-            let obVisible = true;
-            document.getElementById('toggle-ob').addEventListener('click', (e) => {
-                if (obVisible) { series.detachPrimitive(obPrimitive); e.target.innerText = "Afficher les OB"; }
-                else { series.attachPrimitive(obPrimitive); e.target.innerText = "Masquer les OB"; }
-                obVisible = !obVisible;
-            });
+        if trade is None:
+            continue
 
-            if (trendData && trendData.text) {
-                const dashboard = document.getElementById('trend-dashboard');
-                dashboard.style.display = 'block';
-                const lookbackEl = document.getElementById('trend-lookback');
-                if (lookbackEl) lookbackEl.innerText = trendData.lookback;
-                const trendTextEl = document.getElementById('trend-text');
-                if (trendTextEl) { trendTextEl.innerText = trendData.text; trendTextEl.style.color = trendData.color; }
-            }
+        post_entry = post_tokyo[
+            post_tokyo["time"] >= pd.to_datetime(trade["entry_time"], unit="s", utc=True)
+        ]
 
-            chart.timeScale().fitContent();
+        for _, row in post_entry.iterrows():
+            t = row["time"]
+            high = float(row["High"])
+            low = float(row["Low"])
+            close = float(row["Close"])
 
-            const log = document.getElementById('log');
-            if (log) {
-                log.textContent = 'OK - ' + candlesData.length + ' bougies chargées';
-                setTimeout(() => { log.style.display = 'none'; }, 3000);
-            }
+            if trade["direction"] == "short":
+                if high >= trade["sl"] and low <= trade["tp"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["sl"]
+                    trade["exit_reason"] = "SL"
+                    break
+                if high >= trade["sl"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["sl"]
+                    trade["exit_reason"] = "SL"
+                    break
+                if low <= trade["tp"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["tp"]
+                    trade["exit_reason"] = "TP"
+                    break
 
-        } catch (e) {
-            console.error("Erreur de rendu:", e);
-            const log = document.getElementById('log');
-            if (log) log.textContent = 'Erreur Javascript: ' + e.message;
-        }
-    </script>
-</body>
-</html>
+            if trade["direction"] == "long":
+                if low <= trade["sl"] and high >= trade["tp"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["sl"]
+                    trade["exit_reason"] = "SL"
+                    break
+                if low <= trade["sl"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["sl"]
+                    trade["exit_reason"] = "SL"
+                    break
+                if high >= trade["tp"]:
+                    trade["exit_time"] = int(t.timestamp())
+                    trade["exit_price"] = trade["tp"]
+                    trade["exit_reason"] = "TP"
+                    break
+
+            if t.hour >= FORCED_CLOSE_HOUR:
+                trade["exit_time"] = int(t.timestamp())
+                trade["exit_price"] = close
+                trade["exit_reason"] = "23:00"
+                break
+
+        if trade["exit_time"] is None:
+            last_row = post_entry.iloc[-1]
+            trade["exit_time"] = int(last_row["time"].timestamp())
+            trade["exit_price"] = float(last_row["Close"])
+            trade["exit_reason"] = "data_end"
+
+        trades.append(trade)
+
+    print(f"📊 Trades Tokyo générés : {len(trades)}")
+    return trades

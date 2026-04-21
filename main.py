@@ -26,7 +26,7 @@ MASSIVE_MULT = 30
 MT5_SYMBOL = "EURUSD"
 MT5_DEBUT = "2026-01-15"
 MT5_FIN = "2026-04-21"
-MT5_TF = "M30"
+MT5_TF = "M5"
 
 # ─────────────────────────────────────────────────────────────
 # CONFIGURATION DES CHEMINS SYSTÈMES
