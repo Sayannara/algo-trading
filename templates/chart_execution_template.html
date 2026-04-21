@@ -11,8 +11,8 @@
         #controls { position: absolute; top: 15px; right: 15px; z-index: 20; display: flex; gap: 10px; flex-wrap: wrap; }
         .tv-button { background-color: #2962FF; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; opacity: 0.9; font-size: 13px; }
         .tv-button:hover { opacity: 1; }
-        #log { position: fixed; top: 15px; left: 15px; z-index: 9999; color: white; background: rgba(0, 0, 0, 0.7); padding: 8px 10px; font: 12px Arial, sans-serif; border-radius: 6px; }
-        #trend-dashboard { position: absolute; bottom: 25px; right: 20px; z-index: 20; background: rgba(19, 23, 34, 0.85); border: 1px solid #2B2B43; border-radius: 6px; padding: 12px 16px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: none; min-width: 160px; }
+        #log { position: fixed; top: 15px; left: 15px; z-index: 9999; color: white; background: rgba(0,0,0,0.7); padding: 8px 10px; font: 12px Arial, sans-serif; border-radius: 6px; }
+        #trend-dashboard { position: absolute; bottom: 25px; right: 20px; z-index: 20; background: rgba(19,23,34,0.85); border: 1px solid #2B2B43; border-radius: 6px; padding: 12px 16px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: none; min-width: 160px; }
         .trend-title { font-size: 11px; color: #d1d4dc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
         .trend-value { font-size: 16px; font-weight: bold; }
     </style>
@@ -54,12 +54,10 @@
                                     const topY = this._series.priceToCoordinate(zone.max_p);
                                     const bottomY = this._series.priceToCoordinate(zone.min_p);
                                     if (startX === null || endX === null || topY === null || bottomY === null) return;
-
                                     const left = Math.min(startX, endX);
                                     const width = Math.max(Math.abs(endX - startX), 1);
                                     const y = Math.min(topY, bottomY);
                                     const height = Math.abs(bottomY - topY);
-
                                     ctx.fillStyle = zone.color_bg;
                                     ctx.fillRect(left - 5, y - 5, width + 10, height + 10);
                                     ctx.strokeStyle = zone.color_border;
@@ -99,20 +97,32 @@
             });
 
             const series = chart.addSeries(LightweightCharts.CandlestickSeries, {
-                upColor: '#26a69a', downColor: '#ef5350', borderUpColor: '#26a69a', borderDownColor: '#ef5350', wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+                upColor: '#26a69a', downColor: '#ef5350',
+                borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+                wickUpColor: '#26a69a', wickDownColor: '#ef5350',
                 priceFormat: { type: 'price', precision: 5, minMove: 0.00001 }
             });
 
             series.setData(candlesData);
 
+            // Sessions
             const sessionPrimitive = new ZoneBackgroundPrimitive();
-            if (sessionsData && sessionsData.length > 0) { sessionPrimitive.setZones(sessionsData); series.attachPrimitive(sessionPrimitive); }
+            if (sessionsData && sessionsData.length > 0) {
+                sessionPrimitive.setZones(sessionsData);
+                series.attachPrimitive(sessionPrimitive);
+            }
 
+            // Order Blocks
             const obPrimitive = new ZoneBackgroundPrimitive();
-            if (obData && obData.length > 0) { obPrimitive.setZones(obData); series.attachPrimitive(obPrimitive); }
+            if (obData && obData.length > 0) {
+                obPrimitive.setZones(obData);
+                series.attachPrimitive(obPrimitive);
+            }
 
-            const markers = [];
+            // Stratégie Tokyo - Markers
             if (strategyData && strategyData.length > 0) {
+                const markers = [];
+
                 strategyData.forEach(trade => {
                     markers.push({
                         time: trade.sweep_time,
@@ -124,17 +134,31 @@
                     markers.push({
                         time: trade.exit_time,
                         position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
-                        color: trade.exit_reason === 'TP' ? '#4dabf7' : (trade.exit_reason === 'SL' ? '#ffd43b' : '#ced4da'),
+                        color: trade.exit_reason === 'TP' ? '#4dabf7'
+                              : trade.exit_reason === 'SL' ? '#ffd43b'
+                              : '#ced4da',
                         shape: 'square',
                         text: trade.exit_reason
                     });
                 });
-                if (series.setMarkers) {
-                    markers.sort((a, b) => a.time - b.time);
-                    series.setMarkers(markers);
+
+                markers.sort((a, b) => a.time - b.time);
+
+                try {
+                    if (LightweightCharts.SeriesMarkersPrimitive) {
+                        const markerPrimitive = new LightweightCharts.SeriesMarkersPrimitive(markers);
+                        series.attachPrimitive(markerPrimitive);
+                    } else if (series.setMarkers) {
+                        series.setMarkers(markers);
+                    } else {
+                        console.warn("Aucune méthode de markers disponible dans cette version de LightweightCharts.");
+                    }
+                } catch(e) {
+                    console.error("Erreur markers:", e);
                 }
             }
 
+            // Boutons toggle
             let sessionsVisible = true;
             document.getElementById('toggle-sessions').addEventListener('click', (e) => {
                 if (sessionsVisible) { series.detachPrimitive(sessionPrimitive); e.target.innerText = "Afficher les Sessions"; }
@@ -149,6 +173,7 @@
                 obVisible = !obVisible;
             });
 
+            // Dashboard tendance
             if (trendData && trendData.text) {
                 const dashboard = document.getElementById('trend-dashboard');
                 dashboard.style.display = 'block';
