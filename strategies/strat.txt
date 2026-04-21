@@ -1,0 +1,93 @@
+Structure générale
+La règle de base est que la session asiatique doit être en range, puis on marque son plus haut et son plus bas. Ensuite on attend que le prix vienne prendre cette liquidité asiatique au contact d’une zone HTF, puis on cherche un retournement en LTF.
+
+Les zones HTF citées dans la vidéo incluent notamment :
+
+FVG,
+
+breaker blocks,
+
+order blocks,
+
+anciens gaps,
+
+previous day high/low,
+
+previous week high/low,
+
+previous month high/low.
+
+Logique d’entrée
+Le scénario principal expliqué est :
+
+l’Asie fait un range,
+
+le prix vient prendre le Asian high ou le Asian low,
+
+idéalement cette prise de liquidité se produit dans une zone HTF,
+
+puis on attend un LTF reversal avec MSS / displacement / retest de breaker block ou FVG.
+
+Pour un short, la vidéo décrit un contexte où le prix prend le haut asiatique, puis imprime un MSS baissier avec clôture sous le dernier low LTF, suivi d’un déplacement agressif et d’un retour dans la zone de mitigation pour entrer.
+
+Pour un long, c’est l’inverse : prise du bas asiatique, retournement LTF haussier, puis entrée sur retour dans la zone.
+
+Confirmation LTF
+La confirmation basse unité repose surtout sur :
+
+MSS / market structure shift,
+
+displacement,
+
+breaker block,
+
+FVG,
+
+parfois order block,
+
+et éventuellement une rejection de zone plutôt qu’une entrée immédiate.
+
+La vidéo mentionne que les unités utilisées sont surtout M1, M3, M5, M15, avec plus de confirmation sur M5/M15 et plus de RR potentiel sur M1/M3.
+
+Stop et objectifs
+Le stop est généralement placé au-dessus/au-dessous du dernier extrême de structure selon le sens du trade. La transcription dit explicitement que le SL est “above the very last high / below the very last low” autour de la structure de retournement.
+
+Les objectifs décrits sont souvent :
+
+TP1 sur l’autre extrémité asiatique,
+
+puis TP2 sur une liquidité HTF suivante, comme un old gap, daily liquidity, H4 liquidity, ATH, etc.
+
+La vidéo insiste aussi sur des trades à fort RR, souvent 4R à 8R ou plus, avec parfois un runner gardé tant que la structure reste dans le sens du trade.
+
+Confluences
+Les confluences additionnelles mentionnées sont :
+
+zone HTF alignée avec le sweep asiatique,
+
+Fibonacci, surtout 0.618 à 0.786 ou parfois 50% / 0.382 selon le contexte,
+
+SMT divergence entre actifs corrélés, par exemple GBPUSD vs EURUSD ou US30 vs NASDAQ/SP500.
+
+La logique globale n’est donc pas “je trade juste le sweep asiatique”, mais plutôt : Asian range + HTF liquidity + sweep + LTF reversal + confluence.
+
+Version exploitable
+Si je la reformule en version backtestable simple :
+
+L’Asie doit être une range session.
+
+On enregistre asian_high et asian_low.
+
+On attend Londres ou New York.
+
+Si le prix sweep asian_high dans une zone HTF, on cherche un short.
+
+Si le prix sweep asian_low dans une zone HTF, on cherche un long.
+
+L’entrée se fait après MSS/displacement/retest en LTF.
+
+SL au-delà du dernier extrême LTF.
+
+TP1 sur l’autre côté de l’Asie.
+
+TP2 sur la prochaine liquidité HTF.

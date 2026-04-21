@@ -4,6 +4,9 @@ from indicators.sessions_market import calculer_sessions
 LOT_SIZE = 5.0
 FORCED_CLOSE_HOUR = 23
 
+def run(df):
+    return generer_strategie_tokyo_liquidity(df)
+
 def generer_strategie_tokyo_liquidity(df):
     trades = []
 
@@ -22,10 +25,10 @@ def generer_strategie_tokyo_liquidity(df):
 
     for tokyo in tokyo_sessions:
         tokyo_start = pd.to_datetime(tokyo["start"], unit="s", utc=True)
-        tokyo_end = pd.to_datetime(tokyo["end"], unit="s", utc=True)
-        tokyo_high = float(tokyo["max_p"])
-        tokyo_low = float(tokyo["min_p"])
-        same_day = tokyo_start.date()
+        tokyo_end   = pd.to_datetime(tokyo["end"],   unit="s", utc=True)
+        tokyo_high  = float(tokyo["max_p"])
+        tokyo_low   = float(tokyo["min_p"])
+        same_day    = tokyo_start.date()
 
         post_tokyo = df[
             (df["time"] > tokyo_end) &
@@ -38,51 +41,50 @@ def generer_strategie_tokyo_liquidity(df):
         trade = None
 
         for _, row in post_tokyo.iterrows():
-            t = row["time"]
-            high = float(row["High"])
-            low = float(row["Low"])
-            close = float(row["Close"])
+            t     = row["time"]
+            high  = float(row["High"])
+            low   = float(row["Low"])
 
             if t.hour >= FORCED_CLOSE_HOUR:
                 break
 
             if high > tokyo_high:
                 trade = {
-                    "strategy": "Tokyo Liquidity Demo",
+                    "strategy":     "Tokyo Liquidity Demo",
                     "session_date": str(same_day),
-                    "direction": "short",
-                    "lots": LOT_SIZE,
-                    "sweep_type": "tokyo_high_taken",
-                    "sweep_time": int(t.timestamp()),
-                    "entry_time": int(t.timestamp()),
-                    "entry": tokyo_high,
-                    "sl": tokyo_high * 1.01,
-                    "tp": tokyo_low,
-                    "tokyo_high": tokyo_high,
-                    "tokyo_low": tokyo_low,
-                    "exit_time": None,
-                    "exit_price": None,
-                    "exit_reason": None,
+                    "direction":    "short",
+                    "lots":         LOT_SIZE,
+                    "sweep_type":   "tokyo_high_taken",
+                    "sweep_time":   int(t.timestamp()),
+                    "entry_time":   int(t.timestamp()),
+                    "entry":        tokyo_high,
+                    "sl":           tokyo_high * 1.01,
+                    "tp":           tokyo_low,
+                    "tokyo_high":   tokyo_high,
+                    "tokyo_low":    tokyo_low,
+                    "exit_time":    None,
+                    "exit_price":   None,
+                    "exit_reason":  None,
                 }
                 break
 
             if low < tokyo_low:
                 trade = {
-                    "strategy": "Tokyo Liquidity Demo",
+                    "strategy":     "Tokyo Liquidity Demo",
                     "session_date": str(same_day),
-                    "direction": "long",
-                    "lots": LOT_SIZE,
-                    "sweep_type": "tokyo_low_taken",
-                    "sweep_time": int(t.timestamp()),
-                    "entry_time": int(t.timestamp()),
-                    "entry": tokyo_low,
-                    "sl": tokyo_low * 0.99,
-                    "tp": tokyo_high,
-                    "tokyo_high": tokyo_high,
-                    "tokyo_low": tokyo_low,
-                    "exit_time": None,
-                    "exit_price": None,
-                    "exit_reason": None,
+                    "direction":    "long",
+                    "lots":         LOT_SIZE,
+                    "sweep_type":   "tokyo_low_taken",
+                    "sweep_time":   int(t.timestamp()),
+                    "entry_time":   int(t.timestamp()),
+                    "entry":        tokyo_low,
+                    "sl":           tokyo_low * 0.99,
+                    "tp":           tokyo_high,
+                    "tokyo_high":   tokyo_high,
+                    "tokyo_low":    tokyo_low,
+                    "exit_time":    None,
+                    "exit_price":   None,
+                    "exit_reason":  None,
                 }
                 break
 
@@ -94,56 +96,44 @@ def generer_strategie_tokyo_liquidity(df):
         ]
 
         for _, row in post_entry.iterrows():
-            t = row["time"]
-            high = float(row["High"])
-            low = float(row["Low"])
+            t     = row["time"]
+            high  = float(row["High"])
+            low   = float(row["Low"])
             close = float(row["Close"])
 
             if trade["direction"] == "short":
                 if high >= trade["sl"] and low <= trade["tp"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["sl"]
-                    trade["exit_reason"] = "SL"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["sl"], "exit_reason": "SL"})
                     break
                 if high >= trade["sl"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["sl"]
-                    trade["exit_reason"] = "SL"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["sl"], "exit_reason": "SL"})
                     break
                 if low <= trade["tp"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["tp"]
-                    trade["exit_reason"] = "TP"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["tp"], "exit_reason": "TP"})
                     break
 
-            if trade["direction"] == "long":
+            elif trade["direction"] == "long":
                 if low <= trade["sl"] and high >= trade["tp"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["sl"]
-                    trade["exit_reason"] = "SL"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["sl"], "exit_reason": "SL"})
                     break
                 if low <= trade["sl"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["sl"]
-                    trade["exit_reason"] = "SL"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["sl"], "exit_reason": "SL"})
                     break
                 if high >= trade["tp"]:
-                    trade["exit_time"] = int(t.timestamp())
-                    trade["exit_price"] = trade["tp"]
-                    trade["exit_reason"] = "TP"
+                    trade.update({"exit_time": int(t.timestamp()), "exit_price": trade["tp"], "exit_reason": "TP"})
                     break
 
             if t.hour >= FORCED_CLOSE_HOUR:
-                trade["exit_time"] = int(t.timestamp())
-                trade["exit_price"] = close
-                trade["exit_reason"] = "23:00"
+                trade.update({"exit_time": int(t.timestamp()), "exit_price": close, "exit_reason": "23:00"})
                 break
 
         if trade["exit_time"] is None:
             last_row = post_entry.iloc[-1]
-            trade["exit_time"] = int(last_row["time"].timestamp())
-            trade["exit_price"] = float(last_row["Close"])
-            trade["exit_reason"] = "data_end"
+            trade.update({
+                "exit_time":   int(last_row["time"].timestamp()),
+                "exit_price":  float(last_row["Close"]),
+                "exit_reason": "data_end"
+            })
 
         trades.append(trade)
 
