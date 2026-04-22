@@ -122,16 +122,37 @@
             console.log('strategyData', strategyData);
             // Stratégie Asian HTF Reversal - Markers
             if (strategyData && strategyData.length > 0) {
-                const markers = strategyData
-                    .filter(trade => trade && trade.time !== undefined && trade.time !== null)
-                    .map(trade => ({
-                        time: Number(trade.time),
-                        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-                        color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
-                        shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
-                        text: trade.type === 'short' ? 'SHORT' : 'LONG'
-                    }))
-                    .sort((a, b) => a.time - b.time);
+                const markers = [];
+
+                strategyData.forEach(trade => {
+                    if (!trade) return;
+
+                    if (trade.time !== undefined && trade.time !== null) {
+                        markers.push({
+                            time: Number(trade.time),
+                            position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
+                            color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
+                            shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
+                            text: trade.type === 'short' ? 'SHORT' : 'LONG'
+                        });
+                    }
+
+                    if (trade.exit_time !== undefined && trade.exit_time !== null) {
+                        markers.push({
+                            time: Number(trade.exit_time),
+                            position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
+                            color:
+                                trade.exit_reason === 'TP' ? '#4dabf7' :
+                                trade.exit_reason === 'SL' ? '#ffd43b' :
+                                trade.exit_reason === '23:00' ? '#ced4da' :
+                                '#868e96',
+                            shape: 'square',
+                            text: trade.exit_reason || 'EXIT'
+                        });
+                    }
+                });
+
+                markers.sort((a, b) => a.time - b.time);
 
                 if (markers.length > 0) {
                     series.setMarkers(markers);
