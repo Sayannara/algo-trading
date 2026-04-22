@@ -17,7 +17,7 @@ SOURCE_DONNEES = 'MT5'
 # 🎯 STRATÉGIE ACTIVE
 # Mettre None pour désactiver (mode graphique uniquement)
 # ─────────────────────────────────────────────────────────────
-STRATEGIE_ACTIVE = 'demo'
+STRATEGIE_ACTIVE = 'bounce_ob'
 
 REGISTRE_STRATEGIES = {
     'tokyo_liquidity':    'strategies.tokyo_liquidity_demo',
@@ -38,7 +38,7 @@ MASSIVE_MULT   = 30
 
 # --- Paramètres MT5 ---
 MT5_SYMBOL = "EURUSD"
-MT5_DEBUT  = "2025-06-15"
+MT5_DEBUT  = "2026-01-15"
 MT5_FIN    = "2026-04-21"
 MT5_TF     = "M5"
 
@@ -126,8 +126,8 @@ else:
 # Résumé console
 if strategy_trades:
     total   = len(strategy_trades)
-    longs   = sum(1 for t in strategy_trades if t.get("direction") == "long")
-    shorts  = total - longs
+    longs = sum(1 for t in strategy_trades if str(t.get("type", "")).strip().lower() == "long")
+    shorts = sum(1 for t in strategy_trades if str(t.get("type", "")).strip().lower() == "short")
     tp      = sum(1 for t in strategy_trades if t.get("exit_reason") == "TP")
     sl      = sum(1 for t in strategy_trades if t.get("exit_reason") == "SL")
     autres  = total - tp - sl
