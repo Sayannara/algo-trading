@@ -3,113 +3,135 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Algo Trading Chart</title>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <title>Graphique stratégie</title>
+    <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         html, body {
             margin: 0;
             padding: 0;
-            background: #0f1115;
-            color: #e6e6e6;
-            font-family: Arial, sans-serif;
-        }
-
-        #topbar {
-            padding: 12px 16px;
-            border-bottom: 1px solid #222;
-            background: #151922;
-            font-size: 14px;
+            width: 100%;
+            height: 100%;
+            background: #131722;
+            font-family: sans-serif;
+            overflow: hidden;
         }
 
         #chart {
-            width: 100%;
-            height: calc(100vh - 49px);
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            inset: 0;
+        }
+
+        #log {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 9999;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 10px;
+            font: 12px Arial, sans-serif;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
-    <div id="topbar">
-        Graphique stratégie
-    </div>
-
     <div id="chart"></div>
+    <div id="log">Chargement...</div>
 
     <script>
-        const candleData = {{donnees_javascript}};
+        const candlesData = {{donnees_javascript}};
+        const sessionsData = {{sessions_javascript}};
+        const obData = {{ob_javascript}};
+        const trendData = {{trend_javascript}};
         const strategyData = {{strategy_javascript}};
 
-        const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-            layout: {
-                background: { color: '#0f1115' },
-                textColor: '#d9d9d9',
-            },
-            grid: {
-                vertLines: { visible: false },
-                horzLines: { visible: false },
-            },
-            crosshair: {
-                mode: LightweightCharts.CrosshairMode.Normal,
-            },
-            rightPriceScale: {
-                borderVisible: false,
-            },
-            timeScale: {
-                borderVisible: false,
-                timeVisible: true,
-                secondsVisible: false,
-            },
-            width: window.innerWidth,
-            height: window.innerHeight - 49,
-        });
-
-        const series = chart.addCandlestickSeries({
-            upColor: '#26a69a',
-            downColor: '#ef5350',
-            borderUpColor: '#26a69a',
-            borderDownColor: '#ef5350',
-            wickUpColor: '#26a69a',
-            wickDownColor: '#ef5350',
-        });
-
-        series.setData(candleData);
-
-        const markers = [];
-
-        if (strategyData && strategyData.length > 0) {
-            strategyData.forEach(trade => {
-                if (trade.time !== undefined && trade.time !== null) {
-                    markers.push({
-                        time: Number(trade.time),
-                        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-                        color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
-                        shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
-                        text: trade.type === 'short' ? 'SELL' : 'BUY'
-                    });
-                }
-
-                if (trade.exit_time !== undefined && trade.exit_time !== null) {
-                    markers.push({
-                        time: Number(trade.exit_time),
-                        position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
-                        color: '#74c0fc',
-                        shape: 'square',
-                        text: trade.exit_reason || 'EXIT'
-                    });
+        try {
+            const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+                autoSize: true,
+                layout: {
+                    background: { type: 'solid', color: '#131722' },
+                    textColor: '#d1d4dc'
+                },
+                grid: {
+                    vertLines: { visible: false },
+                    horzLines: { visible: false }
+                },
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false
+                },
+                localization: {
+                    locale: 'fr-FR'
+                },
+                rightPriceScale: {
+                    autoScale: true
                 }
             });
+
+            const series = chart.addCandlestickSeries({
+                upColor: '#26a69a',
+                downColor: '#ef5350',
+                borderUpColor: '#26a69a',
+                borderDownColor: '#ef5350',
+                wickUpColor: '#26a69a',
+                wickDownColor: '#ef5350',
+                priceFormat: {
+                    type: 'price',
+                    precision: 5,
+                    minMove: 0.00001
+                }
+            });
+
+            series.setData(candlesData);
+
+            if (strategyData && strategyData.length > 0) {
+                const markers = [];
+
+                strategyData.forEach(trade => {
+                    if (!trade) return;
+
+                    if (trade.time !== undefined && trade.time !== null) {
+                        markers.push({
+                            time: Number(trade.time),
+                            position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
+                            color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
+                            shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
+                            text: trade.type === 'short' ? 'SHORT' : 'LONG'
+                        });
+                    }
+
+                    if (trade.exit_time !== undefined && trade.exit_time !== null) {
+                        markers.push({
+                            time: Number(trade.exit_time),
+                            position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
+                            color: '#74c0fc',
+                            shape: 'square',
+                            text: trade.exit_reason || 'EXIT'
+                        });
+                    }
+                });
+
+                markers.sort((a, b) => a.time - b.time);
+                if (markers.length > 0) {
+                    series.setMarkers(markers);
+                }
+            }
+
+            chart.timeScale().fitContent();
+
+            const log = document.getElementById('log');
+            log.textContent = 'OK - ' + candlesData.length + ' bougies chargées';
+            setTimeout(() => {
+                log.style.display = 'none';
+            }, 3000);
+
+        } catch (e) {
+            console.error('Erreur de rendu:', e);
+            const log = document.getElementById('log');
+            log.textContent = 'Erreur Javascript: ' + e.message;
         }
-
-        markers.sort((a, b) => a.time - b.time);
-        series.setMarkers(markers);
-
-        chart.timeScale().fitContent();
-
-        window.addEventListener('resize', () => {
-            chart.applyOptions({
-                width: window.innerWidth,
-                height: window.innerHeight - 49,
-            });
-        });
     </script>
 </body>
 </html>
