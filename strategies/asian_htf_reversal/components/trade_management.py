@@ -1,4 +1,10 @@
-def build_trade(df, htf_context, reversal_signal, rr=2.0, buffer=0.00015):
+from ..config import STRATEGY_CONFIG
+
+
+def build_trade(df_slice, htf_context, reversal_signal):
+    rr = STRATEGY_CONFIG["rr"]
+    buffer = STRATEGY_CONFIG["buffer"]
+
     if not htf_context or not reversal_signal:
         return None
 
@@ -29,5 +35,6 @@ def build_trade(df, htf_context, reversal_signal, rr=2.0, buffer=0.00015):
         "stop": float(stop_loss),
         "tp": float(take_profit),
         "rr": float(rr),
-        "time": reversal_signal["signal_time"]
+        "time": reversal_signal["signal_time"],
+        "sweep_time": htf_context["sweep_time"],
     }

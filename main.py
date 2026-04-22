@@ -134,7 +134,7 @@ except Exception as e:
 
 # 4. Stratégie Asian HTF Reversal
 try:
-    strategy_trades = run_strategy(df)
+    strategy_trades = run_strategy(df, trend_data)
 except Exception as e:
     print(f"⚠️ Erreur Stratégie Asian HTF Reversal : {e}")
     strategy_trades = []

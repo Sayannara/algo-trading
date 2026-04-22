@@ -119,31 +119,23 @@
                 series.attachPrimitive(obPrimitive);
             }
 
-            // Stratégie Tokyo - Markers
+            console.log('strategyData', strategyData);
+            // Stratégie Asian HTF Reversal - Markers
             if (strategyData && strategyData.length > 0) {
-                const markers = [];
+                const markers = strategyData
+                    .filter(trade => trade && trade.time !== undefined && trade.time !== null)
+                    .map(trade => ({
+                        time: Number(trade.time),
+                        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
+                        color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
+                        shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
+                        text: trade.type === 'short' ? 'SHORT' : 'LONG'
+                    }))
+                    .sort((a, b) => a.time - b.time);
 
-                strategyData.forEach(trade => {
-                    markers.push({
-                        time: trade.sweep_time,
-                        position: trade.direction === 'short' ? 'aboveBar' : 'belowBar',
-                        color: trade.direction === 'short' ? '#ff6b6b' : '#51cf66',
-                        shape: 'circle',
-                        text: trade.direction === 'short' ? 'Sweep Sell' : 'Sweep Buy'
-                    });
-                    markers.push({
-                        time: trade.exit_time,
-                        position: trade.direction === 'short' ? 'belowBar' : 'aboveBar',
-                        color: trade.exit_reason === 'TP' ? '#4dabf7'
-                              : trade.exit_reason === 'SL' ? '#ffd43b'
-                              : '#ced4da',
-                        shape: 'square',
-                        text: trade.exit_reason
-                    });
-                });
-
-                markers.sort((a, b) => a.time - b.time);
-                series.setMarkers(markers);
+                if (markers.length > 0) {
+                    series.setMarkers(markers);
+                }
             }
 
             // Boutons toggle
