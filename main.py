@@ -1,6 +1,7 @@
 import os
 import json
 import webbrowser
+from pprint import pprint
 from strategies.asian_htf_reversal import run_strategy
 
 # --- VIDER LA CONSOLE À CHAQUE LANCEMENT ---
@@ -139,7 +140,29 @@ except Exception as e:
     print(f"⚠️ Erreur Stratégie Asian HTF Reversal : {e}")
     strategy_trades = []
 
+# Rapport console uniquement
+print("\n" + "=" * 70)
+print("📊 RAPPORT STRATÉGIE - ASIAN HTF REVERSAL")
+print("=" * 70)
+print(f"Nombre total de trades : {len(strategy_trades)}")
+
+long_count = sum(1 for t in strategy_trades if t.get("type") == "long")
+short_count = sum(1 for t in strategy_trades if t.get("type") == "short")
+
+print(f"Trades LONG : {long_count}")
+print(f"Trades SHORT: {short_count}")
+
+if strategy_trades:
+    print("\n--- Aperçu des 10 premiers trades ---")
+    for i, trade in enumerate(strategy_trades[:10], start=1):
+        print(f"\nTrade #{i}")
+        pprint(trade, sort_dicts=False)
+else:
+    print("Aucun trade détecté.")
+
 strategy_javascript = json.dumps(strategy_trades, ensure_ascii=False)
+
+
 
 # ─────────────────────────────────────────────────────────────
 # 3. GÉNÉRATION DE LA PAGE WEB
