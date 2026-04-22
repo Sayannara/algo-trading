@@ -7,13 +7,23 @@ from strategies.asian_htf_reversal import run_strategy
 os.system('cls' if os.name == 'nt' else 'clear')
 
 # ─────────────────────────────────────────────────────────────
-# 🛠️ CONFIGURATION GLOBALE
+# CONFIGURATION DES CHEMINS SYSTÈMES
+# ─────────────────────────────────────────────────────────────
+DOSSIER_RACINE = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_FILE = os.path.join(DOSSIER_RACINE, 'templates', 'chart_execution_template.html')
+HTML_FILE = os.path.join(DOSSIER_RACINE, 'output.html')
+
+
+# ─────────────────────────────────────────────────────────────
+# 1. RÉCUPÉRATION DES DONNÉES (Routage dynamique)
 # ─────────────────────────────────────────────────────────────
 
+
+# 🛠️ variable
 # Choisissez votre source de données parmi : 'HISTDATA', 'MASSIVE' ou 'MT5'
 SOURCE_DONNEES = 'MT5'
 
-# --- Paramètres pour HISTDATA (Fichier Local) ---
+# --- Paramètres pour HISTDATA (Fichier Local) --- 
 FICHIER_CSV = 'EURUSD-mars-2026.csv'
 
 # --- Paramètres pour MASSIVE (API en direct) ---
@@ -29,17 +39,8 @@ MT5_DEBUT = "2025-06-15"
 MT5_FIN = "2026-04-21"
 MT5_TF = "M5"
 
-# ─────────────────────────────────────────────────────────────
-# CONFIGURATION DES CHEMINS SYSTÈMES
-# ─────────────────────────────────────────────────────────────
-DOSSIER_RACINE = os.path.dirname(os.path.abspath(__file__))
-TEMPLATE_FILE = os.path.join(DOSSIER_RACINE, 'templates', 'chart_execution_template.html')
-HTML_FILE = os.path.join(DOSSIER_RACINE, 'output.html')
-
-# ─────────────────────────────────────────────────────────────
-# 1. RÉCUPÉRATION DES DONNÉES (Routage dynamique)
-# ─────────────────────────────────────────────────────────────
 df = None
+
 
 if SOURCE_DONNEES == 'HISTDATA':
     print("📡 SOURCE SÉLECTIONNÉE : HISTDATA (Fichier local)")
