@@ -17,7 +17,7 @@ SOURCE_DONNEES = 'MT5'
 # 🎯 STRATÉGIE ACTIVE
 # Mettre None pour désactiver (mode graphique uniquement)
 # ─────────────────────────────────────────────────────────────
-STRATEGIE_ACTIVE = 'None'
+STRATEGIE_ACTIVE = 'demo'
 
 REGISTRE_STRATEGIES = {
     'tokyo_liquidity':    'strategies.tokyo_liquidity_demo',
@@ -117,7 +117,7 @@ else:
     print(f"🚀 Stratégie active : {STRATEGIE_ACTIVE} ({module_path})")
     try:
         module = importlib.import_module(module_path)
-        strategy_trades = module.run(df)
+        strategy_trades = module.run_strategy(df)
         print(f"📊 Trades générés : {len(strategy_trades)}")
     except Exception as e:
         print(f"⚠️  Erreur Stratégie '{STRATEGIE_ACTIVE}' : {e}")

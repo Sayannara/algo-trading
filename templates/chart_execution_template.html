@@ -12,15 +12,13 @@
             width: 100%;
             height: 100%;
             background: #131722;
-            font-family: sans-serif;
             overflow: hidden;
+            font-family: sans-serif;
         }
 
         #chart {
             width: 100vw;
             height: 100vh;
-            position: absolute;
-            inset: 0;
         }
 
         #log {
@@ -41,17 +39,15 @@
     <div id="log">Chargement...</div>
 
     <script>
-        const candlesData = {{donnees_javascript}};
-        const sessionsData = {{sessions_javascript}};
-        const obData = {{ob_javascript}};
-        const trendData = {{trend_javascript}};
-        const strategyData = {{strategy_javascript}};
-
         try {
+            const candlesData = {{donnees_javascript}};
+            const strategyData = {{strategy_javascript}};
+
             const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-                autoSize: true,
+                width: window.innerWidth,
+                height: window.innerHeight,
                 layout: {
-                    background: { type: 'solid', color: '#131722' },
+                    background: { color: '#131722' },
                     textColor: '#d1d4dc'
                 },
                 grid: {
@@ -62,11 +58,8 @@
                     timeVisible: true,
                     secondsVisible: false
                 },
-                localization: {
-                    locale: 'fr-FR'
-                },
                 rightPriceScale: {
-                    autoScale: true
+                    borderVisible: false
                 }
             });
 
@@ -76,29 +69,22 @@
                 borderUpColor: '#26a69a',
                 borderDownColor: '#ef5350',
                 wickUpColor: '#26a69a',
-                wickDownColor: '#ef5350',
-                priceFormat: {
-                    type: 'price',
-                    precision: 5,
-                    minMove: 0.00001
-                }
+                wickDownColor: '#ef5350'
             });
 
             series.setData(candlesData);
 
+            const markers = [];
+
             if (strategyData && strategyData.length > 0) {
-                const markers = [];
-
                 strategyData.forEach(trade => {
-                    if (!trade) return;
-
                     if (trade.time !== undefined && trade.time !== null) {
                         markers.push({
                             time: Number(trade.time),
                             position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
                             color: trade.type === 'short' ? '#ff6b6b' : '#51cf66',
                             shape: trade.type === 'short' ? 'arrowDown' : 'arrowUp',
-                            text: trade.type === 'short' ? 'SHORT' : 'LONG'
+                            text: trade.type === 'short' ? 'SELL' : 'BUY'
                         });
                     }
 
@@ -112,25 +98,21 @@
                         });
                     }
                 });
+            }
 
-                markers.sort((a, b) => a.time - b.time);
-                if (markers.length > 0) {
-                    series.setMarkers(markers);
-                }
+            markers.sort((a, b) => a.time - b.time);
+            if (markers.length > 0) {
+                series.setMarkers(markers);
             }
 
             chart.timeScale().fitContent();
 
-            const log = document.getElementById('log');
-            log.textContent = 'OK - ' + candlesData.length + ' bougies chargées';
-            setTimeout(() => {
-                log.style.display = 'none';
-            }, 3000);
-
+            document.getElementById('log').textContent =
+                'OK - ' + candlesData.length + ' bougies chargées';
         } catch (e) {
-            console.error('Erreur de rendu:', e);
-            const log = document.getElementById('log');
-            log.textContent = 'Erreur Javascript: ' + e.message;
+            console.error(e);
+            document.getElementById('log').textContent =
+                'Erreur Javascript: ' + e.message;
         }
     </script>
 </body>
