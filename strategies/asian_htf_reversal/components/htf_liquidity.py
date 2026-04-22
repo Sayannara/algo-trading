@@ -8,7 +8,7 @@ def detect_htf_liquidity_context(df_slice, trend_bias=None):
         return None
 
     current = df_slice.iloc[-1]
-    recent = df_slice.iloc[-lookback-1:-1]
+    recent = df_slice.iloc[-lookback - 1:-1]
 
     recent_high = recent["High"].max()
     recent_low = recent["Low"].min()

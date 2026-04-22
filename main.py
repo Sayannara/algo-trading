@@ -1,7 +1,6 @@
 import os
 import json
 import webbrowser
-from pprint import pprint
 from strategies.asian_htf_reversal import run_strategy
 
 # --- VIDER LA CONSOLE À CHAQUE LANCEMENT ---
@@ -131,6 +130,7 @@ try:
 
 except Exception as e:
     print(f"⚠️ Erreur Trend Quality : {e}")
+    trend_data = None
     trend_javascript = "null"
 
 # 4. Stratégie Asian HTF Reversal
@@ -140,29 +140,39 @@ except Exception as e:
     print(f"⚠️ Erreur Stratégie Asian HTF Reversal : {e}")
     strategy_trades = []
 
-# Rapport console uniquement
-print("\n" + "=" * 70)
-print("📊 RAPPORT STRATÉGIE - ASIAN HTF REVERSAL")
-print("=" * 70)
-print(f"Nombre total de trades : {len(strategy_trades)}")
+# ─────────────────────────────────────────────────────────────
+# RAPPORT CONSOLE UNIQUEMENT
+# ─────────────────────────────────────────────────────────────
+total_trades = len(strategy_trades)
 
-long_count = sum(1 for t in strategy_trades if t.get("type") == "long")
-short_count = sum(1 for t in strategy_trades if t.get("type") == "short")
+longs = sum(1 for t in strategy_trades if t.get("type") == "long")
+shorts = sum(1 for t in strategy_trades if t.get("type") == "short")
 
-print(f"Trades LONG : {long_count}")
-print(f"Trades SHORT: {short_count}")
+tp_count = sum(1 for t in strategy_trades if t.get("exit_reason") == "TP")
+sl_count = sum(1 for t in strategy_trades if t.get("exit_reason") == "SL")
+end_2300_count = sum(1 for t in strategy_trades if t.get("exit_reason") == "23:00")
+data_end_count = sum(1 for t in strategy_trades if t.get("exit_reason") == "data_end")
 
-if strategy_trades:
-    print("\n--- Aperçu des 10 premiers trades ---")
-    for i, trade in enumerate(strategy_trades[:10], start=1):
-        print(f"\nTrade #{i}")
-        pprint(trade, sort_dicts=False)
-else:
-    print("Aucun trade détecté.")
+def pct(count, total):
+    return (count / total * 100) if total > 0 else 0.0
+
+winrate = pct(tp_count, total_trades)
+
+print("\n📊 RÉSUMÉ — Asian HTF Reversal")
+print("─────────────────────────────────────────")
+print(f"Total trades    : {total_trades}")
+print(f"  ↗  Longs     : {longs}")
+print(f"  ↘  Shorts    : {shorts}")
+print("")
+print("Sorties")
+print(f"  ✅  TP        : {tp_count}  ({pct(tp_count, total_trades):.1f}%)")
+print(f"  ❌  SL        : {sl_count}  ({pct(sl_count, total_trades):.1f}%)")
+print(f"  🕒  23:00     : {end_2300_count}   ({pct(end_2300_count, total_trades):.1f}%)")
+print(f"  📉  data_end  : {data_end_count}   ({pct(data_end_count, total_trades):.1f}%)")
+print("")
+print(f"Winrate         : {winrate:.1f}%")
 
 strategy_javascript = json.dumps(strategy_trades, ensure_ascii=False)
-
-
 
 # ─────────────────────────────────────────────────────────────
 # 3. GÉNÉRATION DE LA PAGE WEB

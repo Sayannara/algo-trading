@@ -51,14 +51,16 @@ def run_strategy(df, trend_data=None):
         return trades
 
     min_bars = STRATEGY_CONFIG["min_bars"]
+    i = min_bars
 
-    for i in range(min_bars, len(df)):
+    while i < len(df):
         df_slice = df.iloc[:i + 1].copy()
 
         current_trend_value = get_trend_value_at_index(trend_data, i)
         trend_bias = get_trend_bias(current_trend_value)
 
         if trend_bias is None and not STRATEGY_CONFIG["allow_neutral_trades"]:
+            i += 1
             continue
 
         htf_context = detect_htf_liquidity_context(
@@ -66,6 +68,7 @@ def run_strategy(df, trend_data=None):
             trend_bias=trend_bias
         )
         if not htf_context:
+            i += 1
             continue
 
         reversal_signal = detect_ltf_reversal(
@@ -73,17 +76,28 @@ def run_strategy(df, trend_data=None):
             htf_context=htf_context
         )
         if not reversal_signal:
+            i += 1
             continue
 
         if trend_bias is not None and reversal_signal["direction"] != trend_bias:
+            i += 1
             continue
 
         trade = build_trade(
-            df_slice=df_slice,
+            df=df,
+            entry_index=i,
             htf_context=htf_context,
             reversal_signal=reversal_signal
         )
+
         if trade:
             trades.append(trade)
+
+            exit_index = trade.get("exit_index")
+            if isinstance(exit_index, int) and exit_index > i:
+                i = exit_index + 1
+                continue
+
+        i += 1
 
     return trades
