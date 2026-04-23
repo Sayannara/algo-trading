@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FVG Viewer</title>
+    <title>FVG + OB Viewer</title>
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         html, body {
@@ -33,59 +33,6 @@
             z-index: 8;
             pointer-events: none;
         }
-
-        #log {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 20;
-            color: white;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 10px 12px;
-            font: 12px Arial, sans-serif;
-            border-radius: 6px;
-            white-space: pre-line;
-            line-height: 1.45;
-        }
-
-        #legend {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            z-index: 20;
-            color: white;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 10px 12px;
-            font: 12px Arial, sans-serif;
-            border-radius: 6px;
-            line-height: 1.6;
-        }
-
-        .legend-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-box {
-            width: 18px;
-            height: 10px;
-            box-sizing: border-box;
-        }
-
-        .bull {
-            border: 2px solid rgba(0, 200, 0, 0.70);
-            background: rgba(0, 170, 0, 0.08);
-        }
-
-        .bear {
-            border: 2px solid rgba(255, 80, 80, 0.75);
-            background: rgba(220, 0, 0, 0.08);
-        }
-
-        .news {
-            color: #ffd54f;
-        }
     </style>
 </head>
 <body>
@@ -94,31 +41,18 @@
         <canvas id="overlay"></canvas>
     </div>
 
-    <div id="log">Chargement...</div>
-
-    <div id="legend">
-        <div class="legend-row">
-            <span class="legend-box bull"></span>
-            <span>Bullish FVG</span>
-        </div>
-        <div class="legend-row">
-            <span class="legend-box bear"></span>
-            <span>Bearish FVG</span>
-        </div>
-        <div class="legend-row news">
-            <span>[NEWS] = créneau news détecté</span>
-        </div>
-    </div>
-
     <script>
         try {
             const candlesData = {{donnees_javascript}};
             const zonesData = {{strategy_javascript}};
             const statsData = {{stats_javascript}};
-
+            const trendData = {{trend_javascript}};
             const chartContainer = document.getElementById('chart');
             const overlay = document.getElementById('overlay');
             const ctx = overlay.getContext('2d');
+            if (Array.isArray(markersData) && markersData.length > 0) {
+                series.setMarkers(markersData);
+            }
 
             const chart = LightweightCharts.createChart(chartContainer, {
                 width: window.innerWidth,
@@ -168,7 +102,9 @@
             }
 
             function drawLabel(text, x, y, color) {
-                const lines = String(text || '').split('\n');
+                const lines = String(text || '').split('\n').filter(Boolean);
+                if (!lines.length) return;
+
                 const paddingX = 6;
                 const paddingY = 4;
                 const lineH = 14;
@@ -223,7 +159,11 @@
                     ctx.fillRect(left, top, width, height);
                     ctx.strokeRect(left, top, width, height);
 
-                    drawLabel(zone.text || zone.title || '', left + 4, top - 4, zone.text_color || '#ffffff');
+                    // Labels uniquement pour les FVG, sans tag [NEWS], uniquement nombre de ticks/%/ATR
+                    if (zone.type === 'bullish_fvg' || zone.type === 'bearish_fvg') {
+                        drawLabel(zone.text || '', left + 4, top - 4, zone.text_color || '#ffffff');
+                    }
+
                     ctx.restore();
                 });
             }
@@ -243,16 +183,8 @@
                 drawZones();
             });
 
-            document.getElementById('log').textContent =
-                'OK - ' + candlesData.length + ' bougies\\n' +
-                'FVG filtrés : ' + statsData.count + '\\n' +
-                'Moyenne : ' + statsData.avg.toFixed(2) + ' ' + statsData.unit + '\\n' +
-                'Médiane : ' + statsData.median.toFixed(2) + ' ' + statsData.unit;
-
         } catch (e) {
             console.error(e);
-            document.getElementById('log').textContent =
-                'Erreur Javascript: ' + e.message;
         }
     </script>
 </body>
