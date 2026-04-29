@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FVG + OB Viewer</title>
+    <title>FVG + OB + Trades</title>
     <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         html, body {
@@ -33,12 +33,47 @@
             z-index: 8;
             pointer-events: none;
         }
+
+        #trend-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 30;
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffffff;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        #trend-heatmap {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 8px;
+            height: 14px;
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        .trend-heatmap-cell {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 2px;
+            opacity: 0.95;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
     <div id="chart-wrap">
         <div id="chart"></div>
         <canvas id="overlay"></canvas>
+        <div id="trend-heatmap"></div>
     </div>
 
     <script>
@@ -47,12 +82,13 @@
             const zonesData = {{strategy_javascript}};
             const statsData = {{stats_javascript}};
             const trendData = {{trend_javascript}};
+            const dailyTrendData = {{daily_trend_javascript}};
+            const markersData = {{markers_javascript}};
+
             const chartContainer = document.getElementById('chart');
             const overlay = document.getElementById('overlay');
+            const heatmapContainer = document.getElementById('trend-heatmap');
             const ctx = overlay.getContext('2d');
-            if (Array.isArray(markersData) && markersData.length > 0) {
-                series.setMarkers(markersData);
-            }
 
             const chart = LightweightCharts.createChart(chartContainer, {
                 width: window.innerWidth,
@@ -88,7 +124,86 @@
             });
 
             series.setData(candlesData);
+
+            if (Array.isArray(markersData) && markersData.length > 0) {
+                series.setMarkers(markersData);
+            }
+
             chart.timeScale().fitContent();
+
+            (function () {
+                const wrap = document.getElementById('chart-wrap');
+                if (!wrap || !trendData) return;
+
+                const box = document.createElement('div');
+                box.id = 'trend-box';
+
+                const score = typeof trendData.score === 'number'
+                    ? trendData.score.toFixed(1) + '%'
+                    : 'N/A';
+
+                const text = trendData.text || 'Trend Quality';
+                box.textContent = score + ' – ' + text;
+
+                if (trendData.color) {
+                    box.style.color = trendData.color;
+                }
+
+                wrap.appendChild(box);
+            })();
+
+            function colorForScore(score) {
+                if (score === null || score === undefined || isNaN(score)) {
+                    return '#555555';
+                }
+
+                const s = Math.max(0, Math.min(100, score));
+
+                if (s <= 50) {
+                    const t = s / 50;
+                    const r = 255;
+                    const g = Math.round(82 + (255 - 82) * t);
+                    const b = Math.round(82 + (255 - 82) * t);
+                    return `rgb(${r}, ${g}, ${b})`;
+                } else {
+                    const t = (s - 50) / 50;
+                    const r = Math.round(255 - (255 - 76) * t);
+                    const g = 255;
+                    const b = Math.round(255 - (255 - 79) * t);
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+            }
+
+            function drawTrendHeatmap() {
+                if (!heatmapContainer || !Array.isArray(dailyTrendData)) return;
+
+                heatmapContainer.innerHTML = '';
+
+                dailyTrendData.forEach(d => {
+                    const x1 = chart.timeScale().timeToCoordinate(d.start);
+                    const x2 = chart.timeScale().timeToCoordinate(d.end);
+
+                    if (
+                        x1 === null || x2 === null ||
+                        Number.isNaN(x1) || Number.isNaN(x2)
+                    ) {
+                        return;
+                    }
+
+                    const left = Math.min(x1, x2);
+                    const right = Math.max(x1, x2);
+                    const width = Math.max(2, right - left);
+
+                    const cell = document.createElement('div');
+                    cell.className = 'trend-heatmap-cell';
+                    cell.style.left = `${left}px`;
+                    cell.style.width = `${width}px`;
+                    cell.style.backgroundColor = colorForScore(d.score);
+                    cell.title = `${d.date} – ${Number(d.score).toFixed(1)}%`;
+
+                    heatmapContainer.appendChild(cell);
+                });
+            }
 
             function resizeOverlay() {
                 const rect = chartContainer.getBoundingClientRect();
@@ -159,7 +274,6 @@
                     ctx.fillRect(left, top, width, height);
                     ctx.strokeRect(left, top, width, height);
 
-                    // Labels uniquement pour les FVG, sans tag [NEWS], uniquement nombre de ticks/%/ATR
                     if (zone.type === 'bullish_fvg' || zone.type === 'bearish_fvg') {
                         drawLabel(zone.text || '', left + 4, top - 4, zone.text_color || '#ffffff');
                     }
@@ -168,19 +282,29 @@
                 });
             }
 
-            resizeOverlay();
-            drawZones();
+            function redrawAll() {
+                resizeOverlay();
+                drawZones();
+                drawTrendHeatmap();
+            }
 
-            chart.timeScale().subscribeVisibleTimeRangeChange(() => drawZones());
-            chart.subscribeCrosshairMove(() => drawZones());
+            redrawAll();
+
+            chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+                drawZones();
+                drawTrendHeatmap();
+            });
+
+            chart.subscribeCrosshairMove(() => {
+                drawZones();
+            });
 
             window.addEventListener('resize', () => {
                 chart.applyOptions({
                     width: window.innerWidth,
                     height: window.innerHeight
                 });
-                resizeOverlay();
-                drawZones();
+                redrawAll();
             });
 
         } catch (e) {

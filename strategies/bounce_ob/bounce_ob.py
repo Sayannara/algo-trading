@@ -1,56 +1,53 @@
 import os
 import json
 
-from indicators import (
-    get_mt5_data,
-    detect_fvg_groups,
-    attach_ict_ob_to_fvg,
-    calculer_sessions,
-    calculer_trend_quality,
-    build_chart_data,
-)
+from indicators import build_chart_data
+from strat import run_strategy
 
-from strat import run_strategy, trades_to_dicts
 
 def main():
-    # 1. Exécution de la stratégie (trades, trend, zones)
-    trades, trend_info, fvg_zones, ob_zones = run_strategy()
+    result = run_strategy()
 
-    # 2. Récupération des données complètes + sessions + candles
-    df = get_mt5_data()
+    df = result.get("df")
+    trend_info = result.get("trend_info")
+    daily_trend = result.get("daily_trend", [])
+    markers = result.get("markers", [])
+
+    trades = result.get("trades", [])
+    fvg_zones = result.get("fvg_zones", [])
+    ob_zones = result.get("ob_zones", [])
+
     if df is None:
+        print("Aucune donnée disponible.")
         return
 
-    session_zones = calculer_sessions(df)
     candles = build_chart_data(df)
 
-    # 3. Zones rectangles pour overlay (sessions + FVG + OB)
-    all_zones = session_zones + fvg_zones + ob_zones
+    # Si plus tard tu remets des zones, elles seront déjà prises en charge ici
+    all_zones = []
+    if fvg_zones:
+        all_zones.extend(fvg_zones)
+    if ob_zones:
+        all_zones.extend(ob_zones)
 
-    # 4. Préparation des markers de trades pour Lightweight Charts
-    trade_dicts = trades_to_dicts(trades)
-    markers = []
+    # Range journalier pour la heatmap, aligné sur l'axe temps
+    daily_trend_ranges = []
+    for d in daily_trend:
+        day_str = d["date"]
+        day_rows = df[df["time"].dt.strftime("%Y-%m-%d") == day_str]
 
-    for t in trade_dicts:
-        if t["entry_time"] is not None:
-            markers.append({
-                "time": int(t["entry_time"]),
-                "position": "belowBar" if t["direction"] == "long" else "aboveBar",
-                "color": "#51cf66" if t["direction"] == "long" else "#ff6b6b",
-                "shape": "arrowUp" if t["direction"] == "long" else "arrowDown",
-                "text": "BUY" if t["direction"] == "long" else "SELL",
-            })
+        if day_rows.empty:
+            continue
 
-        if t["exit_time"] is not None:
-            markers.append({
-                "time": int(t["exit_time"]),
-                "position": "aboveBar" if t["direction"] == "long" else "belowBar",
-                "color": "#74c0fc" if t["exit_reason"] == "TP" else "#ffa94d",
-                "shape": "square",
-                "text": t["exit_reason"] or "EXIT",
-            })
+        start_ts = int(day_rows.iloc[0]["time"].timestamp())
+        end_ts = int(day_rows.iloc[-1]["time"].timestamp())
 
-    markers.sort(key=lambda m: m["time"])
+        daily_trend_ranges.append({
+            "date": day_str,
+            "score": float(d["score"]),
+            "start": start_ts,
+            "end": end_ts,
+        })
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
     template_path = os.path.join(current_dir, "template.html")
@@ -74,29 +71,18 @@ def main():
     html = html.replace("{{strategy_javascript}}", json.dumps(all_zones))
     html = html.replace("{{stats_javascript}}", json.dumps(summary))
     html = html.replace("{{trend_javascript}}", json.dumps(trend_info))
-    html = html.replace("{{trades_javascript}}", json.dumps(trade_dicts))
+    html = html.replace("{{daily_trend_javascript}}", json.dumps(daily_trend_ranges))
     html = html.replace("{{markers_javascript}}", json.dumps(markers))
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
 
-    # 5. Résumé console
-    total_trades = len(trades)
-    tp_count = sum(1 for t in trades if t.exit_reason == "TP")
-    sl_count = sum(1 for t in trades if t.exit_reason == "SL")
-    other_exit = total_trades - tp_count - sl_count
-
     print(f"{len(candles)} bougies chargées")
-    print(f"{len(session_zones)} blocs de session")
-    print(f"{len(fvg_zones)} FVG utilisés pour OB")
-    print(f"{len(ob_zones)} OB ICT")
-    if trend_info is not None:
-        print(f"Trend quality: {trend_info['text']} (score={trend_info['score']:.2f}%, lookback={trend_info['lookback']} jours)")
-    else:
-        print("Trend quality: N/A")
-
-    print(f"Trades totaux: {total_trades}")
-    print(f"TP: {tp_count} | SL: {sl_count} | Autres: {other_exit}")
+    print(f"{len(markers)} markers générés")
+    print(f"{len(daily_trend_ranges)} scores journaliers de trend")
+    print(f"Trades placeholder: {len(trades)}")
+    print(f"FVG placeholder: {len(fvg_zones)}")
+    print(f"OB placeholder: {len(ob_zones)}")
     print(f"Fichier généré: {output_path}")
 
 

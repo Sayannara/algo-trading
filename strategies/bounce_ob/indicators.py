@@ -6,10 +6,6 @@ import pandas as pd
 import config
 
 
-# =========================
-#  Données MT5
-# =========================
-
 def get_mt5_data():
     if not mt5.initialize():
         print(f"Erreur initialisation MT5: {mt5.last_error()}")
@@ -42,10 +38,6 @@ def get_mt5_data():
     df = df.sort_values("time").reset_index(drop=True)
     return df
 
-
-# =========================
-#  Utils News / ATR / Ticks
-# =========================
 
 def parse_news_windows(news_input: str):
     windows = []
@@ -122,10 +114,6 @@ def find_timestamp_at_or_before(df, target_dt):
     return int(eligible.iloc[-1]["time"].timestamp())
 
 
-# =========================
-#  FVG (logique Pine-like)
-# =========================
-
 def detect_fvg_groups(df):
     if df is None or df.empty or len(df) < 3:
         return [], {"count": 0, "avg": 0.0, "median": 0.0, "unit": ""}
@@ -142,8 +130,7 @@ def detect_fvg_groups(df):
     df["ATR14"] = compute_atr(df, 14)
     df["is_news"] = df["time"].apply(lambda x: is_news_time(x, news_windows))
 
-    est_forex = True
-    min_val_active = min_val_forex if est_forex else min_val_others
+    min_val_active = min_val_forex
     min_tick = get_min_tick(config.SYMBOL)
 
     zones = []
@@ -165,7 +152,6 @@ def detect_fvg_groups(df):
         bullish_gap = low_now > high_2
         bearish_gap = high_now < low_2
 
-        # ------------ Bullish FVG ------------
         if bullish_gap:
             gap_price = low_now - high_2
 
@@ -197,16 +183,10 @@ def detect_fvg_groups(df):
                 }
 
             active_bull["display_value"] = compute_display_value(
-                active_bull["sum_gap_price"],
-                close_now,
-                atr_now,
-                measure_type,
-                min_tick
+                active_bull["sum_gap_price"], close_now, atr_now, measure_type, min_tick
             )
 
             base_text = format_display_value(active_bull["display_value"], measure_type)
-            # plus de tag [NEWS] dans le label
-            text = base_text
             validation_size = active_bull["display_value"] >= min_val_active
 
             show = False
@@ -218,12 +198,11 @@ def detect_fvg_groups(df):
                 show = validation_size and active_bull["contains_news"]
 
             active_bull["show"] = show
-            active_bull["text"] = text
+            active_bull["text"] = base_text
             active_bull["bg"] = "rgba(0, 170, 0, 0.15)" if active_bull["contains_news"] else "rgba(0, 170, 0, 0.08)"
             active_bull["border"] = "rgba(0, 200, 0, 0.70)"
             active_bull["text_color"] = "#ffffff"
 
-        # ------------ Bearish FVG ------------
         if bearish_gap:
             gap_price = low_2 - high_now
 
@@ -255,15 +234,10 @@ def detect_fvg_groups(df):
                 }
 
             active_bear["display_value"] = compute_display_value(
-                active_bear["sum_gap_price"],
-                close_now,
-                atr_now,
-                measure_type,
-                min_tick
+                active_bear["sum_gap_price"], close_now, atr_now, measure_type, min_tick
             )
 
             base_text = format_display_value(active_bear["display_value"], measure_type)
-            text = base_text
             validation_size = active_bear["display_value"] >= min_val_active
 
             show = False
@@ -275,7 +249,7 @@ def detect_fvg_groups(df):
                 show = validation_size and active_bear["contains_news"]
 
             active_bear["show"] = show
-            active_bear["text"] = text
+            active_bear["text"] = base_text
             active_bear["bg"] = "rgba(220, 0, 0, 0.15)" if active_bear["contains_news"] else "rgba(220, 0, 0, 0.08)"
             active_bear["border"] = "rgba(255, 80, 80, 0.75)"
             active_bear["text_color"] = "#ffffff"
@@ -327,10 +301,6 @@ def detect_fvg_groups(df):
     return final_zones, summary
 
 
-# =========================
-#  OB ICT
-# =========================
-
 def attach_ict_ob_to_fvg(df, fvg_zones):
     ob_lookback = int(getattr(config, "OB_LOOKBACK", 5))
     min_ob_body = float(getattr(config, "MIN_OB_BODY", 0.00005))
@@ -343,10 +313,7 @@ def attach_ict_ob_to_fvg(df, fvg_zones):
             continue
 
         start_ts = zone["start"]
-        idx_candidates = df.index[
-            df["time"].apply(lambda t: int(t.timestamp()) == start_ts)
-        ].tolist()
-
+        idx_candidates = df.index[df["time"].apply(lambda t: int(t.timestamp()) == start_ts)].tolist()
         if not idx_candidates:
             continue
 
@@ -374,7 +341,6 @@ def attach_ict_ob_to_fvg(df, fvg_zones):
             continue
 
         ob_time_start = int(df.loc[best_ob_idx, "time"].timestamp())
-
         ob_start_dt = df.loc[best_ob_idx, "time"]
         ob_end_dt = ob_start_dt + timedelta(days=ob_extend_days)
         ob_time_end = find_timestamp_at_or_before(df, ob_end_dt)
@@ -408,10 +374,6 @@ def attach_ict_ob_to_fvg(df, fvg_zones):
     return obs
 
 
-# =========================
-#  Sessions
-# =========================
-
 def obtenir_info_session(heure):
     if 0 <= heure < 8:
         return "Tokyo", "rgba(156, 39, 176, 0.10)", "transparent"
@@ -423,7 +385,6 @@ def obtenir_info_session(heure):
 
 def calculer_sessions(df):
     blocs_sessions = []
-
     if df is None or df.empty:
         return blocs_sessions
 
@@ -465,10 +426,6 @@ def calculer_sessions(df):
     return blocs_sessions
 
 
-# =========================
-#  Trend Quality
-# =========================
-
 def calculer_trend_quality(
     df,
     session_lookback=None,
@@ -490,8 +447,61 @@ def calculer_trend_quality(
     if timezone is None:
         timezone = getattr(config, "TREND_TIMEZONE", "Europe/Zurich")
 
-    df_local = df.copy()
+    daily = calculer_trend_quality_par_jour(
+        df=df,
+        session_lookback=session_lookback,
+        use_decay=use_decay,
+        timezone=timezone,
+        weight_ny=weight_ny,
+        weight_ldn=weight_ldn,
+        weight_tky=weight_tky,
+    )
 
+    if not daily:
+        return None
+
+    trend_score = float(daily[-1]["score"])
+
+    if trend_score >= thresh_strong_bull:
+        text = f"Forte Haussière ({trend_score:.1f}%)"
+        color = "#4CAF50"
+    elif trend_score > thresh_weak_bull:
+        text = f"Légère Haussière ({trend_score:.1f}%)"
+        color = "#81C784"
+    elif trend_score <= thresh_strong_bear:
+        text = f"Forte Baissière ({trend_score:.1f}%)"
+        color = "#FF5252"
+    elif trend_score < thresh_weak_bear:
+        text = f"Légère Baissière ({trend_score:.1f}%)"
+        color = "#E57373"
+    else:
+        text = f"Consolidation ({trend_score:.1f}%)"
+        color = "#EEEEEE"
+
+    return {
+        "score": trend_score,
+        "text": text,
+        "color": color,
+        "lookback": int(session_lookback),
+    }
+
+
+def calculer_trend_quality_par_jour(
+    df,
+    session_lookback=6,
+    use_decay=True,
+    timezone=None,
+    weight_ny=50,
+    weight_ldn=35,
+    weight_tky=15,
+):
+    if df is None or df.empty:
+        return []
+
+    if timezone is None:
+        timezone = getattr(config, "TREND_TIMEZONE", "Europe/Zurich")
+
+    df_local = df.copy()
     if df_local["time"].dt.tz is None:
         df_local["time_local"] = df_local["time"].dt.tz_localize("Etc/UTC").dt.tz_convert(timezone)
     else:
@@ -517,22 +527,6 @@ def calculer_trend_quality(
         .reset_index()
     )
 
-    tky_stats = (
-        session_stats[session_stats["session"] == "TKY"]
-        .sort_values("date")
-        .tail(session_lookback)
-    )
-    ldn_stats = (
-        session_stats[session_stats["session"] == "LDN"]
-        .sort_values("date")
-        .tail(session_lookback)
-    )
-    ny_stats = (
-        session_stats[session_stats["session"] == "NY"]
-        .sort_values("date")
-        .tail(session_lookback)
-    )
-
     def calc_score(df_sess):
         highs = df_sess["High"].tolist()
         lows = df_sess["Low"].tolist()
@@ -542,59 +536,47 @@ def calculer_trend_quality(
 
         tot_weight = 0.0
         bull_pts = 0.0
-
         for i in range(1, sz):
             w = (i + 1) if use_decay else 1.0
             tot_weight += (w * 2)
-
             if highs[i] > highs[i - 1]:
                 bull_pts += w
             if lows[i] > lows[i - 1]:
                 bull_pts += w
-
         return (bull_pts / tot_weight) * 100 if tot_weight > 0 else 50.0
 
-    score_tky = calc_score(tky_stats)
-    score_ldn = calc_score(ldn_stats)
-    score_ny = calc_score(ny_stats)
+    results = []
+    all_dates = sorted(session_stats["date"].unique())
 
-    tot_w = weight_ny + weight_ldn + weight_tky
-    if tot_w == 0:
-        wn = wl = wt = 1.0 / 3.0
-    else:
-        wn = weight_ny / tot_w
-        wl = weight_ldn / tot_w
-        wt = weight_tky / tot_w
+    for idx, d in enumerate(all_dates):
+        window_dates = all_dates[max(0, idx + 1 - session_lookback): idx + 1]
+        sub = session_stats[session_stats["date"].isin(window_dates)]
 
-    trend_score = (score_ny * wn) + (score_ldn * wl) + (score_tky * wt)
+        tky_stats = sub[sub["session"] == "TKY"].sort_values("date")
+        ldn_stats = sub[sub["session"] == "LDN"].sort_values("date")
+        ny_stats = sub[sub["session"] == "NY"].sort_values("date")
 
-    if trend_score >= thresh_strong_bull:
-        text = f"Forte Haussière ({trend_score:.1f}%)"
-        color = "#4CAF50"
-    elif trend_score > thresh_weak_bull:
-        text = f"Légère Haussière ({trend_score:.1f}%)"
-        color = "#81C784"
-    elif trend_score <= thresh_strong_bear:
-        text = f"Forte Baissière ({trend_score:.1f}%)"
-        color = "#FF5252"
-    elif trend_score < thresh_weak_bear:
-        text = f"Légère Baissière ({trend_score:.1f}%)"
-        color = "#E57373"
-    else:
-        text = f"Consolidation ({trend_score:.1f}%)"
-        color = "#9E9E9E"
+        score_tky = calc_score(tky_stats)
+        score_ldn = calc_score(ldn_stats)
+        score_ny = calc_score(ny_stats)
 
-    return {
-        "score": float(trend_score),
-        "text": text,
-        "color": color,
-        "lookback": int(session_lookback),
-    }
+        tot_w = weight_ny + weight_ldn + weight_tky
+        if tot_w == 0:
+            wn = wl = wt = 1.0 / 3.0
+        else:
+            wn = weight_ny / tot_w
+            wl = weight_ldn / tot_w
+            wt = weight_tky / tot_w
 
+        trend_score = (score_ny * wn) + (score_ldn * wl) + (score_tky * wt)
 
-# =========================
-#  Candles pour le chart
-# =========================
+        results.append({
+            "date": d.isoformat(),
+            "score": float(trend_score),
+        })
+
+    return results
+
 
 def build_chart_data(df):
     candles = []
