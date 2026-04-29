@@ -67,6 +67,16 @@ SESSIONS = {
 
 # ── Trend quality  ──────────────────────────────────────────────────
 
+INDICATORS = {
+    'sessions': True,
+    'trend_quality': True,
+}
+
+tq_score  = 50.0          # ← ajouter
+tq_text   = "En attente..." # ← ajouter
+tq_color  = "#9E9E9E"     # ← ajouter
+tq_labels = []            # ← ajouter
+
 TREND_QUALITY = {
     'session_lookback': 6,
     'use_decay': True,
