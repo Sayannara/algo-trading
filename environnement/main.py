@@ -18,12 +18,13 @@ OUTPUT   = os.path.join(ROOT, "output.html")
 
 # ── DONNÉES ───────────────────────────────────────────────────
 
-SYMBOL    = "AUDUSD"
-DATE_FROM = "2024-01-01"
-DATE_TO   = "2026-04-29"
-TIMEFRAME = "M15"
 
-df = charger_donnees(symbol=SYMBOL, date_from=DATE_FROM, date_to=DATE_TO, timeframe=TIMEFRAME)
+df = charger_donnees(
+    symbol    = config.SYMBOL,
+    date_from = config.DATE_FROM,
+    date_to   = config.DATE_TO,
+    timeframe = config.TIMEFRAME,
+)
 
 tz = pytz.timezone(config.TIMEZONE)   # ← ajouter
 
