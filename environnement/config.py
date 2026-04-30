@@ -8,7 +8,7 @@
 
 TIMEZONE = 'Europe/Zurich'
 
-SYMBOL    = "EURUSD"
+SYMBOL    = "AUDUSD"
 DATE_FROM = "2026-04-01"
 DATE_TO   = "2026-04-28"
 TIMEFRAME = "M30"
@@ -20,14 +20,14 @@ SOURCE    = "MT5"   # "MT5" | "HISTDATA" | "MASSIVE"
 # INDICATEURS
 # ══════════════════════════════════════════════════════════════
 
-# ── Sessions ──────────────────────────────────────────────────
-
-
-# Indicateurs actifs
+# ── Indicateurs actifs ────────────────────────────────────────
 INDICATORS = {
-    'sessions': True,
+    'sessions':       True,
+    'trend_quality':  True,
+    'trades':         True, 
 }
 
+# ── Sessions ──────────────────────────────────────────────────
 
 SESSIONS = {
     'A': {
@@ -66,11 +66,6 @@ SESSIONS = {
 
 
 # ── Trend quality  ──────────────────────────────────────────────────
-
-INDICATORS = {
-    'sessions': True,
-    'trend_quality': True,
-}
 
 TREND_QUALITY = {
     "enabled": True,
