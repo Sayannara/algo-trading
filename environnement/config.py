@@ -72,24 +72,18 @@ INDICATORS = {
     'trend_quality': True,
 }
 
-tq_score  = 50.0          # ← ajouter
-tq_text   = "En attente..." # ← ajouter
-tq_color  = "#9E9E9E"     # ← ajouter
-tq_labels = []            # ← ajouter
-
 TREND_QUALITY = {
-    'session_lookback': 6,
-    'use_decay': True,
-    'show_day_labels': False,
-    'weights': {
-        'New York': 50,
-        'London': 35,
-        'Tokyo': 15,
-    },
-    'thresholds': {
-        'strong_bull': 75,
-        'weak_bull': 65,
-        'weak_bear': 35,
-        'strong_bear': 25,
+    "enabled": True,
+    "show_labels": True,
+    "lookback_days": 12,
+    "min_days": 4,
+    "use_decay": True,
+    "decay": 0.85,
+    "label_position": "aboveBar",
+    "label_shape": "circle",
+    "sessions": {
+        "tokyo":   {"start": "00:00", "end": "08:00"},
+        "london":  {"start": "08:00", "end": "14:00"},
+        "newyork": {"start": "14:00", "end": "22:00"},
     },
 }

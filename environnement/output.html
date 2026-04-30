@@ -37,6 +37,11 @@ const IND_VOLUME  = [];
 const IND_BASELINE= [];
 const IND_CUSTOM  = [];
 
+const TQ_SCORE      = 61.9;
+const TQ_TEXT       = "Moyen";
+const TQ_COLOR      = "#FFD54F";
+const IND_TQ_LABELS = [{"time": 1775008800, "position": "aboveBar", "color": "#9E9E9E", "shape": "circle", "text": "TQ 50% En attente...\nTokyo   : H 1.15788 / L 1.15521\nLondon  : H 1.16107 / L 1.15590\nNewyork : H 1.16271 / L 1.15808"}, {"time": 1775088000, "position": "aboveBar", "color": "#9E9E9E", "shape": "circle", "text": "TQ 50% En attente...\nTokyo   : H 1.16054 / L 1.15439\nLondon  : H 1.15491 / L 1.15152\nNewyork : H 1.15640 / L 1.15090"}, {"time": 1775174400, "position": "aboveBar", "color": "#9E9E9E", "shape": "circle", "text": "TQ 50% En attente...\nTokyo   : H 1.15452 / L 1.15320\nLondon  : H 1.15464 / L 1.15293\nNewyork : H 1.15490 / L 1.15183"}, {"time": 1775260800, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 56% Moyen\nTokyo   : H 1.15287 / L 1.15101\nLondon  : H N/A / L N/A\nNewyork : H N/A / L N/A"}, {"time": 1775440800, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 58% Moyen\nTokyo   : H 1.15288 / L 1.15051\nLondon  : H 1.15687 / L 1.15173\nNewyork : H 1.15715 / L 1.15354"}, {"time": 1775520000, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 59% Moyen\nTokyo   : H 1.15478 / L 1.15241\nLondon  : H 1.15755 / L 1.15287\nNewyork : H 1.15830 / L 1.15457"}, {"time": 1775606400, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 72% Fort\nTokyo   : H 1.16968 / L 1.15729\nLondon  : H 1.17086 / L 1.16660\nNewyork : H 1.17217 / L 1.16772"}, {"time": 1775692800, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 63% Moyen\nTokyo   : H 1.16704 / L 1.16434\nLondon  : H 1.16749 / L 1.16542\nNewyork : H 1.17139 / L 1.16685"}, {"time": 1775779200, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 69% Fort\nTokyo   : H 1.17085 / L 1.16855\nLondon  : H 1.16966 / L 1.16773\nNewyork : H 1.17392 / L 1.16847"}, {"time": 1775865600, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 64% Moyen\nTokyo   : H 1.17326 / L 1.17268\nLondon  : H N/A / L N/A\nNewyork : H N/A / L N/A"}, {"time": 1776045600, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 72% Fort\nTokyo   : H 1.16901 / L 1.16640\nLondon  : H 1.17001 / L 1.16778\nNewyork : H 1.17314 / L 1.16805"}, {"time": 1776124800, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 79% Fort\nTokyo   : H 1.17679 / L 1.17507\nLondon  : H 1.17967 / L 1.17581\nNewyork : H 1.18111 / L 1.17818"}, {"time": 1776211200, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 71% Fort\nTokyo   : H 1.18017 / L 1.17787\nLondon  : H 1.17993 / L 1.17802\nNewyork : H 1.18080 / L 1.17719"}, {"time": 1776297600, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 74% Fort\nTokyo   : H 1.18175 / L 1.17944\nLondon  : H 1.18237 / L 1.17764\nNewyork : H 1.17887 / L 1.17671"}, {"time": 1776384000, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 72% Fort\nTokyo   : H 1.17877 / L 1.17730\nLondon  : H 1.17956 / L 1.17721\nNewyork : H 1.18491 / L 1.17909"}, {"time": 1776470400, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 65% Moyen\nTokyo   : H 1.17837 / L 1.17600\nLondon  : H N/A / L N/A\nNewyork : H N/A / L N/A"}, {"time": 1776650400, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 71% Fort\nTokyo   : H 1.17617 / L 1.17286\nLondon  : H 1.17719 / L 1.17470\nNewyork : H 1.17896 / L 1.17552"}, {"time": 1776729600, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 73% Fort\nTokyo   : H 1.17909 / L 1.17770\nLondon  : H 1.17822 / L 1.17569\nNewyork : H 1.17759 / L 1.17404"}, {"time": 1776816000, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 74% Fort\nTokyo   : H 1.17533 / L 1.17188\nLondon  : H 1.17625 / L 1.17375\nNewyork : H 1.17573 / L 1.17100"}, {"time": 1776902400, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 73% Fort\nTokyo   : H 1.17136 / L 1.16922\nLondon  : H 1.17121 / L 1.16949\nNewyork : H 1.17165 / L 1.16791"}, {"time": 1776988800, "position": "aboveBar", "color": "#00C853", "shape": "circle", "text": "TQ 80% Tr\u00e8s fort\nTokyo   : H 1.16903 / L 1.16763\nLondon  : H 1.16958 / L 1.16729\nNewyork : H 1.17198 / L 1.16839"}, {"time": 1777075200, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 71% Fort\nTokyo   : H 1.17221 / L 1.17153\nLondon  : H N/A / L N/A\nNewyork : H N/A / L N/A"}, {"time": 1777255200, "position": "aboveBar", "color": "#64DD17", "shape": "circle", "text": "TQ 77% Fort\nTokyo   : H 1.17284 / L 1.16955\nLondon  : H 1.17508 / L 1.17167\nNewyork : H 1.17549 / L 1.17251"}, {"time": 1777334400, "position": "aboveBar", "color": "#FFD54F", "shape": "circle", "text": "TQ 62% Moyen\nTokyo   : H 1.17258 / L 1.17187\nLondon  : H N/A / L N/A\nNewyork : H N/A / L N/A"}];
+
 // ─────────────────────────────────────────────────────────────
 // RECTANGLE PRIMITIVE
 // Dessine un rectangle rempli sur le canvas via l'API Primitive LWC
@@ -156,30 +161,43 @@ if (SESSIONS.length > 0) {
 // ─────────────────────────────────────────────────────────────
 // 3. MARQUEURS TRADES
 // ─────────────────────────────────────────────────────────────
-if (TRADES.length > 0) {
-  const markers = [];
-  TRADES.forEach(trade => {
-    if (trade.time != null)
-      markers.push({
-        time:     Number(trade.time),
-        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-        color:    trade.type === 'short' ? '#ef5350'  : '#26a69a',
-        shape:    trade.type === 'short' ? 'arrowDown': 'arrowUp',
-        text:     trade.type === 'short' ? 'SELL'     : 'BUY',
-      });
-    if (trade.exit_time != null) {
-      const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
-      markers.push({
-        time:     Number(trade.exit_time),
-        position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
-        color:    isTP ? '#26a69a' : '#ef5350',
-        shape:    'square',
-        text:     trade.exit_reason || 'EXIT',
-      });
-    }
+
+const allMarkers = [];
+
+TRADES.forEach(trade => {
+  if (trade.time != null)
+    allMarkers.push({
+      time:     Number(trade.time),
+      position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
+      color:    trade.type === 'short' ? '#ef5350'  : '#26a69a',
+      shape:    trade.type === 'short' ? 'arrowDown': 'arrowUp',
+      text:     trade.type === 'short' ? 'SELL'     : 'BUY',
+    });
+  if (trade.exit_time != null) {
+    const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
+    allMarkers.push({
+      time:     Number(trade.exit_time),
+      position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
+      color:    isTP ? '#26a69a' : '#ef5350',
+      shape:    'square',
+      text:     trade.exit_reason || 'EXIT',
+    });
+  }
+});
+
+IND_TQ_LABELS.forEach(lbl => {
+  allMarkers.push({
+    time:     Number(lbl.time),
+    position: 'belowBar',
+    color:    lbl.color,
+    shape:    'circle',
+    text:     lbl.score + '%',
   });
-  markers.sort((a, b) => a.time - b.time);
-  candleSeries.setMarkers(markers);
+});
+
+if (allMarkers.length > 0) {
+  allMarkers.sort((a, b) => a.time - b.time);
+  candleSeries.setMarkers(allMarkers);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -281,9 +299,20 @@ chart.timeScale().fitContent();
 
 document.getElementById('hud').textContent =
   `${CANDLES.length} bougies` +
-  (SESSIONS.length > 0 ? `  |  ${SESSIONS.length} sessions` : '') +
-  (TRADES.length   > 0 ? `  |  ${TRADES.length} trades`     : '') +
-  (ZONES.length    > 0 ? `  |  ${ZONES.length} zones`       : '');
+  (SESSIONS.length     > 0 ? `  |  ${SESSIONS.length} sessions`    : '') +
+  (TRADES.length       > 0 ? `  |  ${TRADES.length} trades`        : '') +
+  (ZONES.length        > 0 ? `  |  ${ZONES.length} zones`          : '') +
+  (IND_TQ_LABELS.length> 0 ? `  |  ${IND_TQ_LABELS.length} labels` : '');
+
+// ── TREND QUALITY BADGE ───────────────────────────────────────
+if (TQ_TEXT && TQ_TEXT !== 'En attente...') {
+  const badge = document.getElementById('tq-badge');
+  badge.style.display     = 'block';
+  badge.style.color       = TQ_COLOR;
+  badge.style.borderColor = TQ_COLOR;
+  badge.textContent       = `Trend  ${TQ_TEXT}  (${TQ_SCORE}%)`;
+}
 </script>
 </body>
 </html>
+
