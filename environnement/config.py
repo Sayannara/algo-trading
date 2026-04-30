@@ -74,7 +74,7 @@ INDICATORS = {
 
 TREND_QUALITY = {
     "enabled": True,
-    "show_labels": True,
+    "show_labels": False,
     "lookback_days": 12,
     "min_days": 4,
     "use_decay": True,

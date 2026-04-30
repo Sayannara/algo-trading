@@ -43,6 +43,11 @@ if config.INDICATORS.get('sessions', False):
     print(f"   ↳ Sessions : {len(sessions_zones)} zones")
 
 
+tq_score = 50.0
+tq_text = "En attente..."
+tq_color = "#9E9E9E"
+tq_labels = []
+
 if config.INDICATORS.get('trend_quality', False):
     from indicators.trend_quality import compute_trend_quality
     tq_score, tq_text, tq_color, tq_labels = compute_trend_quality(df, config)

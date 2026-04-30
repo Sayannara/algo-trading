@@ -1,318 +1,324 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Chart</title>
+  <script src="https://unpkg.com/lightweight-charts@5.0.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; background: #131722; overflow: hidden; font-family: Arial, sans-serif; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #131722;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
     #chart { width: 100vw; height: 100vh; }
     #hud {
       position: fixed; top: 12px; left: 12px; z-index: 9999;
       color: #d1d4dc; background: rgba(0,0,0,.65);
-      padding: 6px 10px; border-radius: 6px; font-size: 12px;
-      pointer-events: none;
+      padding: 6px 10px; border-radius: 6px;
+      font-size: 12px; pointer-events: none;
+    }
+    #tq-badge {
+      position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+      background: rgba(0,0,0,.75); border-radius: 6px;
+      padding: 8px 14px; font-size: 13px; font-weight: bold;
+      pointer-events: none; border-left: 3px solid #9E9E9E;
+      color: #9E9E9E;
     }
   </style>
 </head>
 <body>
+  <div id="chart"></div>
+  <div id="hud">Chargement…</div>
+  <div id="tq-badge" style="display:none"></div>
 
-<div id="chart"></div>
-<div id="hud">Chargement…</div>
+  <script>
+    // ─────────────────────────────────────────────────────────────
+    // DONNÉES INJECTÉES PAR main.py
+    // ─────────────────────────────────────────────────────────────
+    const CANDLES      = {{candles}};
+    const SESSIONS     = {{sessions}};
+    const TRADES       = {{trades}};
+    const PRICE_LINES  = {{price_lines}};
+    const ZONES        = {{zones}};
+    const IND_EMA      = {{ind_ema}};
+    const IND_SMA      = {{ind_sma}};
+    const IND_VOLUME   = {{ind_volume}};
+    const IND_BASELINE = {{ind_baseline}};
+    const IND_CUSTOM   = {{ind_custom}};
+    const TQ_SCORE     = {{tq_score}};
+    const TQ_TEXT      = {{tq_text}};
+    const TQ_COLOR     = {{tq_color}};
+    const IND_TQ_LABELS= {{ind_tq_labels}};
 
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-
-<script>
-// ─────────────────────────────────────────────────────────────
-// DONNÉES INJECTÉES PAR main.py
-// ─────────────────────────────────────────────────────────────
-const CANDLES     = {{candles}};
-const SESSIONS    = {{sessions}};
-const TRADES      = {{trades}};
-const PRICE_LINES = {{price_lines}};
-const ZONES       = {{zones}};
-const IND_EMA     = {{ind_ema}};
-const IND_SMA     = {{ind_sma}};
-const IND_VOLUME  = {{ind_volume}};
-const IND_BASELINE= {{ind_baseline}};
-const IND_CUSTOM  = {{ind_custom}};
-
-const TQ_SCORE      = {{tq_score}};
-const TQ_TEXT       = {{tq_text}};
-const TQ_COLOR      = {{tq_color}};
-const IND_TQ_LABELS = {{ind_tq_labels}};
-
-// ─────────────────────────────────────────────────────────────
-// RECTANGLE PRIMITIVE
-// Dessine un rectangle rempli sur le canvas via l'API Primitive LWC
-// ─────────────────────────────────────────────────────────────
-class RectRenderer {
-  constructor(x1, y1, x2, y2, opts) {
-    this._x1 = x1; this._y1 = y1;
-    this._x2 = x2; this._y2 = y2;
-    this._opts = opts;
-  }
-  draw(target) {
-    target.useBitmapCoordinateSpace(scope => {
-      if (this._x1 === null || this._x2 === null ||
-          this._y1 === null || this._y2 === null) return;
-
-      const ctx = scope.context;
-      const pr  = scope.horizontalPixelRatio;
-      const vr  = scope.verticalPixelRatio;
-
-      const x1 = Math.round(Math.min(this._x1, this._x2) * pr);
-      const x2 = Math.round(Math.max(this._x1, this._x2) * pr);
-      const y1 = Math.round(Math.min(this._y1, this._y2) * vr);
-      const y2 = Math.round(Math.max(this._y1, this._y2) * vr);
-
-      // Remplissage
-      ctx.fillStyle = this._opts.fillColor;
-      ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-
-      // Bordure
-      if (this._opts.borderColor) {
-        ctx.strokeStyle = this._opts.borderColor;
-        ctx.lineWidth   = pr;
-        ctx.strokeRect(x1 + 0.5, y1 + 0.5, x2 - x1 - 1, y2 - y1 - 1);
+    // ─────────────────────────────────────────────────────────────
+    // RECTANGLE PRIMITIVE
+    // ─────────────────────────────────────────────────────────────
+    class RectRenderer {
+      constructor(x1, y1, x2, y2, opts) {
+        this._x1 = x1; this._y1 = y1;
+        this._x2 = x2; this._y2 = y2;
+        this._opts = opts;
       }
-    });
-  }
-}
+      draw(target) {
+        target.useBitmapCoordinateSpace(scope => {
+          if (this._x1 === null || this._x2 === null ||
+              this._y1 === null || this._y2 === null) return;
+          const ctx = scope.context;
+          const pr  = scope.horizontalPixelRatio;
+          const vr  = scope.verticalPixelRatio;
+          const x1  = Math.round(Math.min(this._x1, this._x2) * pr);
+          const x2  = Math.round(Math.max(this._x1, this._x2) * pr);
+          const y1  = Math.round(Math.min(this._y1, this._y2) * vr);
+          const y2  = Math.round(Math.max(this._y1, this._y2) * vr);
+          ctx.fillStyle = this._opts.fillColor;
+          ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+          if (this._opts.borderColor) {
+            ctx.strokeStyle = this._opts.borderColor;
+            ctx.lineWidth = pr;
+            ctx.strokeRect(x1 + 0.5, y1 + 0.5, x2 - x1 - 1, y2 - y1 - 1);
+          }
+        });
+      }
+    }
 
-class RectView {
-  constructor(source) { this._src = source; }
-  update() {
-    const s   = this._src;
-    const ts  = s._chart.timeScale();
-    s._cx1 = ts.timeToCoordinate(s._t1);
-    s._cx2 = ts.timeToCoordinate(s._t2);
-    s._cy1 = s._series.priceToCoordinate(s._p1);
-    s._cy2 = s._series.priceToCoordinate(s._p2);
-  }
-  renderer() {
-    return new RectRenderer(
-      this._src._cx1, this._src._cy1,
-      this._src._cx2, this._src._cy2,
-      this._src._opts
+    class RectView {
+      constructor(source) { this._src = source; }
+      update() {
+        const s  = this._src;
+        const ts = s._chart.timeScale();
+        s._cx1 = ts.timeToCoordinate(s._t1);
+        s._cx2 = ts.timeToCoordinate(s._t2);
+        s._cy1 = s._series.priceToCoordinate(s._p1);
+        s._cy2 = s._series.priceToCoordinate(s._p2);
+      }
+      renderer() {
+        return new RectRenderer(
+          this._src._cx1, this._src._cy1,
+          this._src._cx2, this._src._cy2,
+          this._src._opts
+        );
+      }
+    }
+
+    class RectPrimitive {
+      constructor(chart, series, t1, p1, t2, p2, opts) {
+        this._chart  = chart;  this._series = series;
+        this._t1 = t1; this._p1 = p1;
+        this._t2 = t2; this._p2 = p2;
+        this._opts = opts;
+        this._cx1 = null; this._cy1 = null;
+        this._cx2 = null; this._cy2 = null;
+        this._views = [new RectView(this)];
+      }
+      updateAllViews() { this._views.forEach(v => v.update()); }
+      paneViews()      { return this._views; }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CHART
+    // ─────────────────────────────────────────────────────────────
+    const chart = LightweightCharts.createChart(
+      document.getElementById('chart'), {
+        width:  window.innerWidth,
+        height: window.innerHeight,
+        layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
+        grid:   { vertLines: { color: '#1e2230' }, horzLines: { color: '#1e2230' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#2a2e39' },
+        rightPriceScale: { borderColor: '#2a2e39' },
+    });
+
+    window.addEventListener('resize', () =>
+      chart.applyOptions({ width: window.innerWidth, height: window.innerHeight })
     );
-  }
-}
 
-class RectPrimitive {
-  constructor(chart, series, t1, p1, t2, p2, opts) {
-    this._chart  = chart;
-    this._series = series;
-    this._t1 = t1; this._p1 = p1;
-    this._t2 = t2; this._p2 = p2;
-    this._opts = opts;
-    this._cx1 = null; this._cy1 = null;
-    this._cx2 = null; this._cy2 = null;
-    this._views = [new RectView(this)];
-  }
-  updateAllViews() { this._views.forEach(v => v.update()); }
-  paneViews()      { return this._views; }
-}
+    // ─────────────────────────────────────────────────────────────
+    // 1. CANDLESTICKS
+    // ─────────────────────────────────────────────────────────────
+    const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+      upColor:        '#26a69a', downColor:        '#ef5350',
+      borderUpColor:  '#26a69a', borderDownColor:  '#ef5350',
+      wickUpColor:    '#26a69a', wickDownColor:    '#ef5350',
+    });
+    candleSeries.setData(CANDLES);
 
-// ─────────────────────────────────────────────────────────────
-// CHART
-// ─────────────────────────────────────────────────────────────
-const chart = LightweightCharts.createChart(document.getElementById('chart'), {
-  width:  window.innerWidth,
-  height: window.innerHeight,
-  layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
-  grid:   { vertLines: { color: '#1e2230' }, horzLines: { color: '#1e2230' } },
-  crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-  timeScale:       { timeVisible: true, secondsVisible: false, borderColor: '#2a2e39' },
-  rightPriceScale: { borderColor: '#2a2e39' },
-});
+    // ─────────────────────────────────────────────────────────────
+    // 2. SESSIONS  ← clés réelles : price_top, price_bottom, color
+    // ─────────────────────────────────────────────────────────────
+    if (SESSIONS.length > 0) {
+      SESSIONS.forEach(ses => {
+        candleSeries.attachPrimitive(new RectPrimitive(
+          chart, candleSeries,
+          Number(ses.time_start), ses.price_top,
+          Number(ses.time_end),   ses.price_bottom,
+          {
+            fillColor:   ses.color,
+            borderColor: ses.border_color,
+          }
+        ));
+      });
+    }
 
-window.addEventListener('resize', () =>
-  chart.applyOptions({ width: window.innerWidth, height: window.innerHeight })
-);
+    // ─────────────────────────────────────────────────────────────
+    // 3. MARQUEURS (trades + labels TQ)
+    // ─────────────────────────────────────────────────────────────
+    const allMarkers = [];
 
-// ─────────────────────────────────────────────────────────────
-// 1. CANDLESTICKS
-// ─────────────────────────────────────────────────────────────
-const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-  upColor: '#26a69a', downColor: '#ef5350',
-  borderUpColor: '#26a69a', borderDownColor: '#ef5350',
-  wickUpColor: '#26a69a', wickDownColor: '#ef5350',
-});
-candleSeries.setData(CANDLES);
-
-// ─────────────────────────────────────────────────────────────
-// 2. SESSIONS (rectangles via Primitive)
-// ─────────────────────────────────────────────────────────────
-if (SESSIONS.length > 0) {
-  SESSIONS.forEach(ses => {
-    candleSeries.attachPrimitive(new RectPrimitive(
-      chart, candleSeries,
-      Number(ses.time_start), ses.price_top,
-      Number(ses.time_end),   ses.price_bottom,
-      {
-        fillColor:   ses.color,
-        borderColor: ses.border_color,
+    TRADES.forEach(trade => {
+      if (trade.time != null) allMarkers.push({
+        time:     Number(trade.time),
+        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
+        color:    trade.type === 'short' ? '#ef5350'  : '#26a69a',
+        shape:    trade.type === 'short' ? 'arrowDown' : 'arrowUp',
+        text:     trade.type === 'short' ? 'SELL'      : 'BUY',
+      });
+      if (trade.exit_time != null) {
+        const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
+        allMarkers.push({
+          time:     Number(trade.exit_time),
+          position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
+          color:    isTP ? '#26a69a' : '#ef5350',
+          shape:    'square',
+          text:     trade.exit_reason || 'EXIT',
+        });
       }
-    ));
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// 3. MARQUEURS TRADES
-// ─────────────────────────────────────────────────────────────
-
-const allMarkers = [];
-
-TRADES.forEach(trade => {
-  if (trade.time != null)
-    allMarkers.push({
-      time:     Number(trade.time),
-      position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-      color:    trade.type === 'short' ? '#ef5350'  : '#26a69a',
-      shape:    trade.type === 'short' ? 'arrowDown': 'arrowUp',
-      text:     trade.type === 'short' ? 'SELL'     : 'BUY',
     });
-  if (trade.exit_time != null) {
-    const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
-    allMarkers.push({
-      time:     Number(trade.exit_time),
-      position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
-      color:    isTP ? '#26a69a' : '#ef5350',
-      shape:    'square',
-      text:     trade.exit_reason || 'EXIT',
+
+    IND_TQ_LABELS.forEach(lbl => {
+      allMarkers.push({
+        time:     Number(lbl.time),
+        position: 'belowBar',
+        color:    lbl.color,
+        shape:    'circle',
+        text:     lbl.score + '%',
+      });
     });
-  }
-});
 
-IND_TQ_LABELS.forEach(lbl => {
-  allMarkers.push({
-    time:     Number(lbl.time),
-    position: 'belowBar',
-    color:    lbl.color,
-    shape:    'circle',
-    text:     lbl.score + '%',
-  });
-});
+    if (allMarkers.length > 0) {
+      allMarkers.sort((a, b) => a.time - b.time);
+      candleSeries.setMarkers(allMarkers);
+    }
 
-if (allMarkers.length > 0) {
-  allMarkers.sort((a, b) => a.time - b.time);
-  candleSeries.setMarkers(allMarkers);
-}
-
-// ─────────────────────────────────────────────────────────────
-// 4. LIGNES HORIZONTALES
-// ─────────────────────────────────────────────────────────────
-if (PRICE_LINES.length > 0) {
-  PRICE_LINES.forEach(pl => {
-    candleSeries.createPriceLine({
-      price: pl.price, color: pl.color || '#ffffff',
-      lineWidth: pl.width || 1,
-      lineStyle: pl.style || LightweightCharts.LineStyle.Dashed,
-      axisLabelVisible: false,
-      title: pl.label || '',
+    // ─────────────────────────────────────────────────────────────
+    // 4. LIGNES HORIZONTALES
+    // ─────────────────────────────────────────────────────────────
+    PRICE_LINES.forEach(pl => {
+      candleSeries.createPriceLine({
+        price: pl.price,
+        color: pl.color || '#ffffff',
+        lineWidth: pl.width || 1,
+        lineStyle: pl.style || LightweightCharts.LineStyle.Dashed,
+        axisLabelVisible: false,
+        title: pl.label || '',
+      });
     });
-  });
-}
 
-// ─────────────────────────────────────────────────────────────
-// 5. ZONES STRATÉGIE (OB, FVG...) — aussi via Primitive
-// ─────────────────────────────────────────────────────────────
-if (ZONES.length > 0) {
-  ZONES.forEach(zone => {
-    candleSeries.attachPrimitive(new RectPrimitive(
-      chart, candleSeries,
-      Number(zone.time_start), zone.price_top,
-      Number(zone.time_end),   zone.price_bottom,
-      {
-        fillColor:   zone.color || 'rgba(255,160,0,0.15)',
-        borderColor: zone.border_color || 'rgba(255,160,0,0.6)',
-      }
-    ));
-  });
-}
+    // ─────────────────────────────────────────────────────────────
+    // 5. ZONES (OB, FVG...)
+    // ─────────────────────────────────────────────────────────────
+    if (ZONES.length > 0) {
+      ZONES.forEach(zone => {
+        candleSeries.attachPrimitive(new RectPrimitive(
+          chart, candleSeries,
+          Number(zone.time_start), zone.price_top,
+          Number(zone.time_end),   zone.price_bottom,
+          {
+            fillColor:   zone.color        || 'rgba(255,160,0,0.15)',
+            borderColor: zone.border_color || 'rgba(255,160,0,0.6)',
+          }
+        ));
+      });
+    }
 
-// ─────────────────────────────────────────────────────────────
-// 6. EMA
-// ─────────────────────────────────────────────────────────────
-if (IND_EMA.length > 0) {
-  const s = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#f5a623', lineWidth: 2,
-    lastValueVisible: false, priceLineVisible: false, title: 'EMA',
-  });
-  s.setData(IND_EMA);
-}
+    // ─────────────────────────────────────────────────────────────
+    // 6. EMA
+    // ─────────────────────────────────────────────────────────────
+    if (IND_EMA.length > 0) {
+      const s = chart.addSeries(LightweightCharts.LineSeries, {
+        color: '#f5a623', lineWidth: 2,
+        lastValueVisible: false, priceLineVisible: false, title: 'EMA',
+      });
+      s.setData(IND_EMA);
+    }
 
-// ─────────────────────────────────────────────────────────────
-// 7. SMA
-// ─────────────────────────────────────────────────────────────
-if (IND_SMA.length > 0) {
-  const s = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#2196f3', lineWidth: 2,
-    lastValueVisible: false, priceLineVisible: false, title: 'SMA',
-  });
-  s.setData(IND_SMA);
-}
+    // ─────────────────────────────────────────────────────────────
+    // 7. SMA
+    // ─────────────────────────────────────────────────────────────
+    if (IND_SMA.length > 0) {
+      const s = chart.addSeries(LightweightCharts.LineSeries, {
+        color: '#2196f3', lineWidth: 2,
+        lastValueVisible: false, priceLineVisible: false, title: 'SMA',
+      });
+      s.setData(IND_SMA);
+    }
 
-// ─────────────────────────────────────────────────────────────
-// 8. VOLUME
-// ─────────────────────────────────────────────────────────────
-if (IND_VOLUME.length > 0) {
-  const s = chart.addSeries(LightweightCharts.HistogramSeries, {
-    priceFormat: { type: 'volume' }, priceScaleId: 'volume',
-  });
-  chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
-  s.setData(IND_VOLUME.map(v => ({
-    time: v.time, value: v.value, color: v.color || '#26a69a55',
-  })));
-}
+    // ─────────────────────────────────────────────────────────────
+    // 8. VOLUME
+    // ─────────────────────────────────────────────────────────────
+    if (IND_VOLUME.length > 0) {
+      const s = chart.addSeries(LightweightCharts.HistogramSeries, {
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+      });
+      chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+      s.setData(IND_VOLUME.map(v => ({
+        time: v.time, value: v.value, color: v.color || '#26a69a55',
+      })));
+    }
 
-// ─────────────────────────────────────────────────────────────
-// 9. BASELINE
-// ─────────────────────────────────────────────────────────────
-if (IND_BASELINE.length > 0) {
-  const s = chart.addSeries(LightweightCharts.BaselineSeries, {
-    baseValue: { type: 'price', price: 0 },
-    topLineColor: '#26a69a', topFillColor1: 'rgba(38,166,154,0.28)', topFillColor2: 'rgba(38,166,154,0.05)',
-    bottomLineColor: '#ef5350', bottomFillColor1: 'rgba(239,83,80,0.05)', bottomFillColor2: 'rgba(239,83,80,0.28)',
-    priceScaleId: 'baseline', lastValueVisible: false, priceLineVisible: false, title: 'Baseline',
-  });
-  chart.priceScale('baseline').applyOptions({ scaleMargins: { top: 0.75, bottom: 0.05 } });
-  s.setData(IND_BASELINE);
-}
+    // ─────────────────────────────────────────────────────────────
+    // 9. BASELINE
+    // ─────────────────────────────────────────────────────────────
+    if (IND_BASELINE.length > 0) {
+      const s = chart.addSeries(LightweightCharts.BaselineSeries, {
+        baseValue: { type: 'price', price: 0 },
+        topLineColor:      '#26a69a', topFillColor1:    'rgba(38,166,154,0.28)',
+        topFillColor2:     'rgba(38,166,154,0.05)',
+        bottomLineColor:   '#ef5350', bottomFillColor1: 'rgba(239,83,80,0.05)',
+        bottomFillColor2:  'rgba(239,83,80,0.28)',
+        priceScaleId: 'baseline',
+        lastValueVisible: false, priceLineVisible: false, title: 'Baseline',
+      });
+      chart.priceScale('baseline').applyOptions({ scaleMargins: { top: 0.75, bottom: 0.05 } });
+      s.setData(IND_BASELINE);
+    }
 
-// ─────────────────────────────────────────────────────────────
-// 10. CUSTOM
-// ─────────────────────────────────────────────────────────────
-if (IND_CUSTOM.length > 0) {
-  const s = chart.addSeries(LightweightCharts.LineSeries, {
-    color: '#b39ddb', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dotted,
-    lastValueVisible: false, priceLineVisible: false, title: 'Custom',
-  });
-  s.setData(IND_CUSTOM);
-}
+    // ─────────────────────────────────────────────────────────────
+    // 10. CUSTOM
+    // ─────────────────────────────────────────────────────────────
+    if (IND_CUSTOM.length > 0) {
+      const s = chart.addSeries(LightweightCharts.LineSeries, {
+        color: '#b39ddb', lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dotted,
+        lastValueVisible: false, priceLineVisible: false, title: 'Custom',
+      });
+      s.setData(IND_CUSTOM);
+    }
 
-// ─────────────────────────────────────────────────────────────
-// FIT & HUD
-// ─────────────────────────────────────────────────────────────
-chart.timeScale().fitContent();
+    // ─────────────────────────────────────────────────────────────
+    // FIT & HUD
+    // ─────────────────────────────────────────────────────────────
+    chart.timeScale().fitContent();
 
-document.getElementById('hud').textContent =
-  `${CANDLES.length} bougies` +
-  (SESSIONS.length     > 0 ? `  |  ${SESSIONS.length} sessions`    : '') +
-  (TRADES.length       > 0 ? `  |  ${TRADES.length} trades`        : '') +
-  (ZONES.length        > 0 ? `  |  ${ZONES.length} zones`          : '') +
-  (IND_TQ_LABELS.length> 0 ? `  |  ${IND_TQ_LABELS.length} labels` : '');
+    document.getElementById('hud').textContent =
+      `${CANDLES.length} bougies`
+      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`         : '')
+      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`             : '')
+      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`               : '')
+      + (IND_TQ_LABELS.length > 0 ? ` | ${IND_TQ_LABELS.length} tq labels`  : '');
 
-// ── TREND QUALITY BADGE ───────────────────────────────────────
-if (TQ_TEXT && TQ_TEXT !== 'En attente...') {
-  const badge = document.getElementById('tq-badge');
-  badge.style.display     = 'block';
-  badge.style.color       = TQ_COLOR;
-  badge.style.borderColor = TQ_COLOR;
-  badge.textContent       = `Trend  ${TQ_TEXT}  (${TQ_SCORE}%)`;
-}
-</script>
+    // ─────────────────────────────────────────────────────────────
+    // TREND QUALITY BADGE
+    // ─────────────────────────────────────────────────────────────
+    if (TQ_SCORE !== null && TQ_SCORE !== undefined && !Number.isNaN(Number(TQ_SCORE))) {
+      const badge = document.getElementById('tq-badge');
+      badge.style.display     = 'block';
+      badge.style.color       = TQ_COLOR;
+      badge.style.borderColor = TQ_COLOR;
+      badge.textContent       = `Trend Quality : ${TQ_SCORE}%`;
+    }
+  </script>
 </body>
 </html>
-
