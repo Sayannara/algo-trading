@@ -179,14 +179,31 @@
     // ─────────────────────────────────────────────────────────────
     const allMarkers = [];
 
+    // 3.a — trades déjà en markers (display_trades.py)
     TRADES.forEach(trade => {
-      if (trade.time != null) allMarkers.push({
+      if (trade.time == null) return;
+
+      // Si ce sont déjà des markers prêts (time/position/shape/color/text)
+      if ('position' in trade || 'shape' in trade || 'text' in trade) {
+        allMarkers.push({
+          time:     Number(trade.time),
+          position: trade.position || 'aboveBar',
+          color:    trade.color    || '#ffffff',
+          shape:    trade.shape    || 'circle',
+          text:     trade.text     || '',
+        });
+        return;
+      }
+
+      // 3.b — ancien format logique (type, exit_time, exit_reason)
+      allMarkers.push({
         time:     Number(trade.time),
         position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-        color:    trade.type === 'short' ? '#ef5350'  : '#26a69a',
+        color:    trade.type === 'short' ? '#ef5350' : '#26a69a',
         shape:    trade.type === 'short' ? 'arrowDown' : 'arrowUp',
-        text:     trade.type === 'short' ? 'SELL'      : 'BUY',
+        text:     trade.type === 'short' ? 'SELL' : 'BUY',
       });
+
       if (trade.exit_time != null) {
         const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
         allMarkers.push({
@@ -199,6 +216,7 @@
       }
     });
 
+    // 3.c — labels Trend Quality
     IND_TQ_LABELS.forEach(lbl => {
       allMarkers.push({
         time:     Number(lbl.time),
