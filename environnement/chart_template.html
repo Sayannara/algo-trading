@@ -175,76 +175,38 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 3. MARQUEURS (trades + labels TQ)
+    // 3. MARQUEURS (désactivés pour l’instant)
     // ─────────────────────────────────────────────────────────────
-    const allMarkers = [];
+    // On n'utilise pas TRADES / IND_TQ_LABELS comme markers pour éviter
+    // les problèmes d’API (setMarkers). Les trades sont visibles via
+    // les petites barres de prix (section suivante).
 
-    // 3.a — trades déjà en markers (display_trades.py)
-    TRADES.forEach(trade => {
-      if (trade.time == null) return;
+    // ─────────────────────────────────────────────────────────────
+    // 4. BARRES DE PRIX COURTES (PRICE_LINES)
+    // ─────────────────────────────────────────────────────────────
+    if (PRICE_LINES.length > 0) {
+      // largeur en secondes autour du point (ex: 10 minutes)
+      const halfWidthSec = 10 * 60;
+      // hauteur relative autour du prix (ex: 0.0005 pour AUDUSD)
+      const halfHeight = 0.0005;
 
-      // Si ce sont déjà des markers prêts (time/position/shape/color/text)
-      if ('position' in trade || 'shape' in trade || 'text' in trade) {
-        allMarkers.push({
-          time:     Number(trade.time),
-          position: trade.position || 'aboveBar',
-          color:    trade.color    || '#ffffff',
-          shape:    trade.shape    || 'circle',
-          text:     trade.text     || '',
-        });
-        return;
-      }
+      PRICE_LINES.forEach(pl => {
+        const t = Number(pl.time);
+        const p = Number(pl.price);
+        const color = pl.color || '#ffffff';
 
-      // 3.b — ancien format logique (type, exit_time, exit_reason)
-      allMarkers.push({
-        time:     Number(trade.time),
-        position: trade.type === 'short' ? 'aboveBar' : 'belowBar',
-        color:    trade.type === 'short' ? '#ef5350' : '#26a69a',
-        shape:    trade.type === 'short' ? 'arrowDown' : 'arrowUp',
-        text:     trade.type === 'short' ? 'SELL' : 'BUY',
+        candleSeries.attachPrimitive(new RectPrimitive(
+          chart,
+          candleSeries,
+          t - halfWidthSec, p + halfHeight,
+          t + halfWidthSec, p - halfHeight,
+          {
+            fillColor:   color,
+            borderColor: color,
+          }
+        ));
       });
-
-      if (trade.exit_time != null) {
-        const isTP = String(trade.exit_reason || '').toUpperCase() === 'TP';
-        allMarkers.push({
-          time:     Number(trade.exit_time),
-          position: trade.type === 'short' ? 'belowBar' : 'aboveBar',
-          color:    isTP ? '#26a69a' : '#ef5350',
-          shape:    'square',
-          text:     trade.exit_reason || 'EXIT',
-        });
-      }
-    });
-
-    // 3.c — labels Trend Quality
-    IND_TQ_LABELS.forEach(lbl => {
-      allMarkers.push({
-        time:     Number(lbl.time),
-        position: 'belowBar',
-        color:    lbl.color,
-        shape:    'circle',
-        text:     lbl.score + '%',
-      });
-    });
-
-    if (allMarkers.length > 0) {
-      allMarkers.sort((a, b) => a.time - b.time);
-      candleSeries.setMarkers(allMarkers);
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // 4. LIGNES HORIZONTALES
-    // ─────────────────────────────────────────────────────────────
-    PRICE_LINES.forEach(pl => {
-      candleSeries.createPriceLine({
-        price: pl.price,
-        color: pl.color || '#ffffff',
-        lineWidth: pl.width || 1,
-        lineStyle: pl.style || LightweightCharts.LineStyle.Dashed,
-        axisLabelVisible: false,
-        title: pl.label || '',
-      });
-    });
 
     // ─────────────────────────────────────────────────────────────
     // 5. ZONES (OB, FVG...)
@@ -264,71 +226,6 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 6. EMA
-    // ─────────────────────────────────────────────────────────────
-    if (IND_EMA.length > 0) {
-      const s = chart.addSeries(LightweightCharts.LineSeries, {
-        color: '#f5a623', lineWidth: 2,
-        lastValueVisible: false, priceLineVisible: false, title: 'EMA',
-      });
-      s.setData(IND_EMA);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 7. SMA
-    // ─────────────────────────────────────────────────────────────
-    if (IND_SMA.length > 0) {
-      const s = chart.addSeries(LightweightCharts.LineSeries, {
-        color: '#2196f3', lineWidth: 2,
-        lastValueVisible: false, priceLineVisible: false, title: 'SMA',
-      });
-      s.setData(IND_SMA);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 8. VOLUME
-    // ─────────────────────────────────────────────────────────────
-    if (IND_VOLUME.length > 0) {
-      const s = chart.addSeries(LightweightCharts.HistogramSeries, {
-        priceFormat: { type: 'volume' },
-        priceScaleId: 'volume',
-      });
-      chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
-      s.setData(IND_VOLUME.map(v => ({
-        time: v.time, value: v.value, color: v.color || '#26a69a55',
-      })));
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 9. BASELINE
-    // ─────────────────────────────────────────────────────────────
-    if (IND_BASELINE.length > 0) {
-      const s = chart.addSeries(LightweightCharts.BaselineSeries, {
-        baseValue: { type: 'price', price: 0 },
-        topLineColor:      '#26a69a', topFillColor1:    'rgba(38,166,154,0.28)',
-        topFillColor2:     'rgba(38,166,154,0.05)',
-        bottomLineColor:   '#ef5350', bottomFillColor1: 'rgba(239,83,80,0.05)',
-        bottomFillColor2:  'rgba(239,83,80,0.28)',
-        priceScaleId: 'baseline',
-        lastValueVisible: false, priceLineVisible: false, title: 'Baseline',
-      });
-      chart.priceScale('baseline').applyOptions({ scaleMargins: { top: 0.75, bottom: 0.05 } });
-      s.setData(IND_BASELINE);
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 10. CUSTOM
-    // ─────────────────────────────────────────────────────────────
-    if (IND_CUSTOM.length > 0) {
-      const s = chart.addSeries(LightweightCharts.LineSeries, {
-        color: '#b39ddb', lineWidth: 1,
-        lineStyle: LightweightCharts.LineStyle.Dotted,
-        lastValueVisible: false, priceLineVisible: false, title: 'Custom',
-      });
-      s.setData(IND_CUSTOM);
-    }
-
-    // ─────────────────────────────────────────────────────────────
     // FIT & HUD
     // ─────────────────────────────────────────────────────────────
     chart.timeScale().fitContent();
@@ -336,8 +233,8 @@
     document.getElementById('hud').textContent =
       `${CANDLES.length} bougies`
       + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`        : '')
-      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`            : '')
-      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`              : '');
+      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`              : '')
+      + (PRICE_LINES.length   > 0 ? ` | ${PRICE_LINES.length} niveaux`     : '');
 
     // ─────────────────────────────────────────────────────────────
     // TREND QUALITY BADGE + SURVOL DYNAMIQUE
