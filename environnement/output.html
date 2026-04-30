@@ -51,6 +51,19 @@
     const TQ_TEXT      = "Range";
     const TQ_COLOR     = "#EF5350";
     const IND_TQ_LABELS= [];
+    const TQ_HISTORY   = [{"date": "2026-03-02", "time": 1772413200, "score": 50.0, "text": "En attente...", "color": "#9E9E9E"}, {"date": "2026-03-03", "time": 1772496000, "score": 50.0, "text": "En attente...", "color": "#9E9E9E"}, {"date": "2026-03-04", "time": 1772582400, "score": 50.0, "text": "En attente...", "color": "#9E9E9E"}, {"date": "2026-03-05", "time": 1772668800, "score": 24.0, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-06", "time": 1772755200, "score": 16.4, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-07", "time": 1772841600, "score": 19.7, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-09", "time": 1773018000, "score": 20.3, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-10", "time": 1773100800, "score": 39.0, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-11", "time": 1773187200, "score": 30.6, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-12", "time": 1773273600, "score": 24.4, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-13", "time": 1773360000, "score": 19.7, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-14", "time": 1773446400, "score": 18.4, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-16", "time": 1773622800, "score": 28.1, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-17", "time": 1773705600, "score": 41.4, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-18", "time": 1773792000, "score": 50.8, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-19", "time": 1773878400, "score": 47.2, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-20", "time": 1773964800, "score": 57.6, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-21", "time": 1774051200, "score": 58.6, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-23", "time": 1774227600, "score": 49.8, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-24", "time": 1774310400, "score": 58.9, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-25", "time": 1774396800, "score": 64.2, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-26", "time": 1774483200, "score": 54.6, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-03-27", "time": 1774569600, "score": 44.9, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-28", "time": 1774656000, "score": 41.5, "text": "Faible", "color": "#FF7043"}, {"date": "2026-03-30", "time": 1774836000, "score": 31.2, "text": "Range", "color": "#EF5350"}, {"date": "2026-03-31", "time": 1774915200, "score": 29.6, "text": "Range", "color": "#EF5350"}, {"date": "2026-04-01", "time": 1775001600, "score": 43.2, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-02", "time": 1775088000, "score": 38.7, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-03", "time": 1775174400, "score": 39.5, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-04", "time": 1775260800, "score": 37.6, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-06", "time": 1775440800, "score": 42.9, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-07", "time": 1775520000, "score": 52.6, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-04-08", "time": 1775606400, "score": 63.7, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-04-09", "time": 1775692800, "score": 57.9, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-04-10", "time": 1775779200, "score": 68.2, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-11", "time": 1775865600, "score": 70.8, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-13", "time": 1776045600, "score": 65.2, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-14", "time": 1776124800, "score": 70.4, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-15", "time": 1776211200, "score": 71.4, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-16", "time": 1776297600, "score": 68.8, "text": "Fort", "color": "#64DD17"}, {"date": "2026-04-17", "time": 1776384000, "score": 62.6, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-04-18", "time": 1776470400, "score": 58.5, "text": "Moyen", "color": "#FFD54F"}, {"date": "2026-04-20", "time": 1776650400, "score": 45.7, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-21", "time": 1776729600, "score": 47.3, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-22", "time": 1776816000, "score": 39.6, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-23", "time": 1776902400, "score": 29.6, "text": "Range", "color": "#EF5350"}, {"date": "2026-04-24", "time": 1776988800, "score": 29.2, "text": "Range", "color": "#EF5350"}, {"date": "2026-04-25", "time": 1777075200, "score": 33.9, "text": "Range", "color": "#EF5350"}, {"date": "2026-04-27", "time": 1777255200, "score": 41.6, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-28", "time": 1777334400, "score": 36.6, "text": "Faible", "color": "#FF7043"}, {"date": "2026-04-29", "time": 1777420800, "score": 33.4, "text": "Range", "color": "#EF5350"}];
+
+    // ─────────────────────────────────────────────────────────────
+    // RECHERCHE SCORE PAR TIMESTAMP
+    // ─────────────────────────────────────────────────────────────
+    function getTQScoreAt(lwcTime) {
+      let result = null;
+      for (const entry of TQ_HISTORY) {
+        if (entry.time <= lwcTime) result = entry;
+        else break;
+      }
+      return result;
+    }
 
     // ─────────────────────────────────────────────────────────────
     // RECTANGLE PRIMITIVE
@@ -145,7 +158,7 @@
     candleSeries.setData(CANDLES);
 
     // ─────────────────────────────────────────────────────────────
-    // 2. SESSIONS  ← clés réelles : price_top, price_bottom, color
+    // 2. SESSIONS
     // ─────────────────────────────────────────────────────────────
     if (SESSIONS.length > 0) {
       SESSIONS.forEach(ses => {
@@ -304,21 +317,37 @@
 
     document.getElementById('hud').textContent =
       `${CANDLES.length} bougies`
-      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`         : '')
-      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`             : '')
-      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`               : '')
-      + (IND_TQ_LABELS.length > 0 ? ` | ${IND_TQ_LABELS.length} tq labels`  : '');
+      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`        : '')
+      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`            : '')
+      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`              : '');
 
     // ─────────────────────────────────────────────────────────────
-    // TREND QUALITY BADGE
+    // TREND QUALITY BADGE + SURVOL DYNAMIQUE
     // ─────────────────────────────────────────────────────────────
-    if (TQ_SCORE !== null && TQ_SCORE !== undefined && !Number.isNaN(Number(TQ_SCORE))) {
-      const badge = document.getElementById('tq-badge');
+    const badge = document.getElementById('tq-badge');
+
+    function showBadge(score, color) {
       badge.style.display     = 'block';
-      badge.style.color       = TQ_COLOR;
-      badge.style.borderColor = TQ_COLOR;
-      badge.textContent       = `Trend Quality : ${TQ_SCORE}%`;
+      badge.style.color       = color;
+      badge.style.borderColor = color;
+      badge.textContent       = `Trend Quality : ${score}%`;
     }
+
+    if (TQ_SCORE !== null && TQ_SCORE !== undefined && !Number.isNaN(Number(TQ_SCORE))) {
+      showBadge(TQ_SCORE, TQ_COLOR);
+    }
+
+    chart.subscribeCrosshairMove(param => {
+      if (!param || !param.time) {
+        if (TQ_SCORE !== null && !Number.isNaN(Number(TQ_SCORE))) {
+          showBadge(TQ_SCORE, TQ_COLOR);
+        }
+        return;
+      }
+      const entry = getTQScoreAt(param.time);
+      if (entry) showBadge(entry.score, entry.color);
+    });
+
   </script>
 </body>
 </html>

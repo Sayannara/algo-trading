@@ -51,6 +51,19 @@
     const TQ_TEXT      = {{tq_text}};
     const TQ_COLOR     = {{tq_color}};
     const IND_TQ_LABELS= {{ind_tq_labels}};
+    const TQ_HISTORY   = {{tq_history}};
+
+    // ─────────────────────────────────────────────────────────────
+    // RECHERCHE SCORE PAR TIMESTAMP
+    // ─────────────────────────────────────────────────────────────
+    function getTQScoreAt(lwcTime) {
+      let result = null;
+      for (const entry of TQ_HISTORY) {
+        if (entry.time <= lwcTime) result = entry;
+        else break;
+      }
+      return result;
+    }
 
     // ─────────────────────────────────────────────────────────────
     // RECTANGLE PRIMITIVE
@@ -145,7 +158,7 @@
     candleSeries.setData(CANDLES);
 
     // ─────────────────────────────────────────────────────────────
-    // 2. SESSIONS  ← clés réelles : price_top, price_bottom, color
+    // 2. SESSIONS
     // ─────────────────────────────────────────────────────────────
     if (SESSIONS.length > 0) {
       SESSIONS.forEach(ses => {
@@ -304,21 +317,37 @@
 
     document.getElementById('hud').textContent =
       `${CANDLES.length} bougies`
-      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`         : '')
-      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`             : '')
-      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`               : '')
-      + (IND_TQ_LABELS.length > 0 ? ` | ${IND_TQ_LABELS.length} tq labels`  : '');
+      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`        : '')
+      + (TRADES.length        > 0 ? ` | ${TRADES.length} trades`            : '')
+      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`              : '');
 
     // ─────────────────────────────────────────────────────────────
-    // TREND QUALITY BADGE
+    // TREND QUALITY BADGE + SURVOL DYNAMIQUE
     // ─────────────────────────────────────────────────────────────
-    if (TQ_SCORE !== null && TQ_SCORE !== undefined && !Number.isNaN(Number(TQ_SCORE))) {
-      const badge = document.getElementById('tq-badge');
+    const badge = document.getElementById('tq-badge');
+
+    function showBadge(score, color) {
       badge.style.display     = 'block';
-      badge.style.color       = TQ_COLOR;
-      badge.style.borderColor = TQ_COLOR;
-      badge.textContent       = `Trend Quality : ${TQ_SCORE}%`;
+      badge.style.color       = color;
+      badge.style.borderColor = color;
+      badge.textContent       = `Trend Quality : ${score}%`;
     }
+
+    if (TQ_SCORE !== null && TQ_SCORE !== undefined && !Number.isNaN(Number(TQ_SCORE))) {
+      showBadge(TQ_SCORE, TQ_COLOR);
+    }
+
+    chart.subscribeCrosshairMove(param => {
+      if (!param || !param.time) {
+        if (TQ_SCORE !== null && !Number.isNaN(Number(TQ_SCORE))) {
+          showBadge(TQ_SCORE, TQ_COLOR);
+        }
+        return;
+      }
+      const entry = getTQScoreAt(param.time);
+      if (entry) showBadge(entry.score, entry.color);
+    });
+
   </script>
 </body>
 </html>
