@@ -19,8 +19,8 @@ OUTPUT   = os.path.join(ROOT, "output.html")
 # ── DONNÉES ───────────────────────────────────────────────────
 
 SYMBOL    = "EURUSD"
-DATE_FROM = "2026-04-01"
-DATE_TO   = "2026-04-28"
+DATE_FROM = "2026-03-01"
+DATE_TO   = "2026-04-29"
 TIMEFRAME = "M30"
 
 df = charger_donnees(symbol=SYMBOL, date_from=DATE_FROM, date_to=DATE_TO, timeframe=TIMEFRAME)
@@ -43,14 +43,15 @@ if config.INDICATORS.get('sessions', False):
     print(f"   ↳ Sessions : {len(sessions_zones)} zones")
 
 
-tq_score = 50.0
-tq_text = "En attente..."
-tq_color = "#9E9E9E"
-tq_labels = []
+tq_score   = 50.0
+tq_text    = "En attente..."
+tq_color   = "#9E9E9E"
+tq_labels  = []
+tq_history = []
 
 if config.INDICATORS.get('trend_quality', False):
     from indicators.trend_quality import compute_trend_quality
-    tq_score, tq_text, tq_color, tq_labels = compute_trend_quality(df, config)
+    tq_score, tq_text, tq_color, tq_labels, tq_history = compute_trend_quality(df, config)
 
 # ── INJECTION ─────────────────────────────────────────────────
 html = open(TEMPLATE, encoding="utf-8").read()
@@ -68,6 +69,7 @@ html = html.replace("{{tq_score}}", json.dumps(tq_score))
 html = html.replace("{{tq_text}}", json.dumps(tq_text))
 html = html.replace("{{tq_color}}", json.dumps(tq_color))
 html = html.replace("{{ind_tq_labels}}", json.dumps(tq_labels))
+html = html.replace("{{tq_history}}", json.dumps(tq_history))
 
 open(OUTPUT, "w", encoding="utf-8").write(html)
 # webbrowser.open(f"file://{OUTPUT}")

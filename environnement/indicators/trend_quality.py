@@ -63,6 +63,15 @@ def _weighted_mean(values, weights, default=50.0):
         return default
     return sum(v * w for v, w in pairs) / sum(w for _, w in pairs)
 
+def _to_lwc_ts(ts, tz) -> int:
+    ts = pd.Timestamp(ts)
+    if ts.tzinfo is None:
+        ts = ts.tz_localize("UTC")
+    else:
+        ts = ts.tz_convert("UTC")
+    local = ts.tz_convert(tz)
+    offset = int(local.utcoffset().total_seconds())
+    return int(ts.timestamp()) + offset
 
 def _session_score(session_df: pd.DataFrame, use_decay: bool, decay: float) -> float:
     highs = session_df["High"].tolist()
@@ -127,8 +136,9 @@ def _build_daily_sessions(df: pd.DataFrame, cfg: dict, tz) -> pd.DataFrame:
 
     rows = []
 
+    first_bar = work.groupby("date_local")["time"].first().to_dict()
     for day in sorted(work["date_local"].unique()):
-        row = {"date": day}
+        row = {"date": day, "marker_time": first_bar.get(day)}
 
         for session_name, sess in session_defs.items():
             start_local = tz.localize(datetime.combine(day, sess["start"]))
@@ -197,17 +207,19 @@ def compute_trend_quality(df: pd.DataFrame, config):
             raw_score = sum(session_scores) / len(session_scores) if session_scores else 50.0
             score, text, color = _fmt_score(raw_score)
 
+        lwc_time = _to_lwc_ts(daily.iloc[i]["marker_time"], tz)
         history.append({
-            "date": str(window.iloc[-1]["date"]),
+            "date":  str(window.iloc[-1]["date"]),
+            "time":  lwc_time,
             "score": score,
-            "text": text,
+            "text":  text,
             "color": color,
         })
 
     _LAST_TQ_HISTORY = history
 
     final = history[-1]
-    return final["score"], final["text"], final["color"], []
+    return final["score"], final["text"], final["color"], [], history
 
 
 def get_score_at(index: int, history=None):
