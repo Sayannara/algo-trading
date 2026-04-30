@@ -66,7 +66,7 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // RECTANGLE PRIMITIVE
+    // RECTANGLE PRIMITIVE (sessions / zones)
     // ─────────────────────────────────────────────────────────────
     class RectRenderer {
       constructor(x1, y1, x2, y2, opts) {
@@ -175,38 +175,26 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 3. MARQUEURS (désactivés pour l’instant)
+    // 3. MARQUEURS DE TRADES (API OFFICIELLE)
     // ─────────────────────────────────────────────────────────────
-    // On n'utilise pas TRADES / IND_TQ_LABELS comme markers pour éviter
-    // les problèmes d’API (setMarkers). Les trades sont visibles via
-    // les petites barres de prix (section suivante).
+    if (TRADES.length > 0 && LightweightCharts.createSeriesMarkers) {
+      const markers = TRADES.map(t => ({
+        time:     Number(t.time),
+        position: t.position || 'aboveBar',
+        color:    t.color    || '#ffffff',
+        shape:    t.shape    || 'circle',
+        text:     t.text     || '',
+      }));
 
-    // ─────────────────────────────────────────────────────────────
-    // 4. BARRES DE PRIX COURTES (PRICE_LINES)
-    // ─────────────────────────────────────────────────────────────
-    if (PRICE_LINES.length > 0) {
-      // largeur en secondes autour du point (ex: 10 minutes)
-      const halfWidthSec = 10 * 60;
-      // hauteur relative autour du prix (ex: 0.0005 pour AUDUSD)
-      const halfHeight = 0.0005;
-
-      PRICE_LINES.forEach(pl => {
-        const t = Number(pl.time);
-        const p = Number(pl.price);
-        const color = pl.color || '#ffffff';
-
-        candleSeries.attachPrimitive(new RectPrimitive(
-          chart,
-          candleSeries,
-          t - halfWidthSec, p + halfHeight,
-          t + halfWidthSec, p - halfHeight,
-          {
-            fillColor:   color,
-            borderColor: color,
-          }
-        ));
-      });
+      // API officielle v5: createSeriesMarkers(series, markers)
+      LightweightCharts.createSeriesMarkers(candleSeries, markers);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // 4. (PRICE_LINES non utilisés pour l'instant)
+    // ─────────────────────────────────────────────────────────────
+    // PRICE_LINES est disponible si tu veux réactiver des niveaux plus tard,
+    // mais on ne les dessine pas ici pour garder le template minimal.
 
     // ─────────────────────────────────────────────────────────────
     // 5. ZONES (OB, FVG...)
@@ -228,13 +216,37 @@
     // ─────────────────────────────────────────────────────────────
     // FIT & HUD
     // ─────────────────────────────────────────────────────────────
-    chart.timeScale().fitContent();
 
-    document.getElementById('hud').textContent =
-      `${CANDLES.length} bougies`
-      + (SESSIONS.length      > 0 ? ` | ${SESSIONS.length} sessions`        : '')
-      + (ZONES.length         > 0 ? ` | ${ZONES.length} zones`              : '')
-      + (PRICE_LINES.length   > 0 ? ` | ${PRICE_LINES.length} niveaux`     : '');
+    chart.timeScale().fitContent();
+    const hud = document.getElementById('hud');
+
+    if (CANDLES.length > 0) {
+      const first = CANDLES[0];
+      const last  = CANDLES[CANDLES.length - 1];
+
+      // time est en timestamp Unix (secondes), on reconstruit une date locale
+      const firstDate = new Date(first.time * 1000);
+      const lastDate  = new Date(last.time * 1000);
+
+      const pad = (n) => String(n).padStart(2, '0');
+
+      const fmtDate = (d) =>
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+      // Ces valeurs viennent du Python via config, donc on les réinjecte à la main ici :
+      const symbol    = "{{symbol}}" || "";
+      const timeframe = "{{timeframe}}" || "";
+
+      const line1 = `${symbol} ${timeframe}  |  ${fmtDate(firstDate)} → ${fmtDate(lastDate)}`;
+      const line2 =
+        `${CANDLES.length} bougies`
+        + (SESSIONS.length > 0 ? `  |  ${SESSIONS.length} sessions` : "")
+        + (TRADES.length   > 0 ? `  |  ${TRADES.length} trades`     : "");
+
+      hud.innerHTML = `${line1}<br>${line2}`;
+    } else {
+      hud.textContent = "Aucune donnée";
+    }
 
     // ─────────────────────────────────────────────────────────────
     // TREND QUALITY BADGE + SURVOL DYNAMIQUE

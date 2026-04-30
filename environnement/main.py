@@ -57,16 +57,18 @@ if config.INDICATORS.get('trend_quality', False):
     from indicators.trend_quality import compute_trend_quality
     tq_score, tq_text, tq_color, tq_labels, tq_history = compute_trend_quality(df, config)
 
+from display_trades import load_trades
 if config.INDICATORS.get('trades', False):
-    from display_trades import load_trades
-    raw = load_trades(
+    trades_payload = load_trades(
         csv_path=os.path.join(ROOT, 'trades_result.csv'),
-        symbol='AUDUSD',
+        symbol=config.SYMBOL,
         tz_name=config.TIMEZONE,
     )
-    trades      = [t for t in raw if '_type' not in t]
-    price_lines = [t for t in raw if t.get('_type') == 'price_line']
-    print(f"   ↳ Trades : {len(trades)//2} trades chargés")
+    trades      = trades_payload["markers"]
+    price_lines = trades_payload["price_lines"]
+else:
+    trades      = []
+    price_lines = []
 
 # ── INJECTION ─────────────────────────────────────────────────
 html = open(TEMPLATE, encoding="utf-8").read()
@@ -86,6 +88,9 @@ html = html.replace("{{tq_text}}",       json.dumps(tq_text))
 html = html.replace("{{tq_color}}",      json.dumps(tq_color))
 html = html.replace("{{ind_tq_labels}}", json.dumps(tq_labels))
 html = html.replace("{{tq_history}}",    json.dumps(tq_history))
+
+html = html.replace("{{symbol}}",    json.dumps(config.SYMBOL))
+html = html.replace("{{timeframe}}", json.dumps(config.TIMEFRAME))
 
 open(OUTPUT, "w", encoding="utf-8").write(html)
 # webbrowser.open(f"file://{OUTPUT}")
