@@ -26,12 +26,32 @@
       pointer-events: none; border-left: 3px solid #9E9E9E;
       color: #9E9E9E;
     }
+
+    #trade-nav {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; background: rgba(0,0,0,.75);
+      border-radius: 6px; padding: 8px 16px;
+      font-size: 13px; color: #d1d4dc;
+      display: flex; align-items: center; gap: 16px;
+      pointer-events: all;
+    }
+    #trade-nav button {
+      background: none; border: 1px solid #2a2e39;
+      color: #d1d4dc; border-radius: 4px;
+      padding: 4px 10px; cursor: pointer; font-size: 13px;
+    }
+    #trade-nav button:hover { background: #2a2e39; }    
   </style>
 </head>
 <body>
   <div id="chart"></div>
   <div id="hud">Chargement…</div>
   <div id="tq-badge" style="display:none"></div>
+  <div id="trade-nav" style="display:none">
+    <button id="nav-prev">◀ Prev</button>
+    <span id="nav-counter">Trade 1 / 1</span>
+    <button id="nav-next">Next ▶</button>
+  </div>
 
   <script>
     // ─────────────────────────────────────────────────────────────
@@ -52,6 +72,7 @@
     const TQ_COLOR     = {{tq_color}};
     const IND_TQ_LABELS= {{ind_tq_labels}};
     const TQ_HISTORY   = {{tq_history}};
+    const TRADE_BOXES  = {{trade_boxes}};
 
     // ─────────────────────────────────────────────────────────────
     // RECHERCHE SCORE PAR TIMESTAMP
@@ -133,76 +154,60 @@
     // TRADE BOX PRIMITIVE (zone de trade locale)
     // ─────────────────────────────────────────────────────────────
     class TradeBoxRenderer {
-      constructor(xEntry, xRight, entry, sl, isLong, maxRR, colors) {
-        this._xEntry = xEntry;
-        this._xRight = xRight;
-        this._entry  = entry;
-        this._sl     = sl;
-        this._isLong = isLong;
-        this._maxRR  = maxRR;
-        this._colors = colors;
+      constructor(xEntry, xRight, yEntry, ySl, yTpFinal, isLong, maxRR, yRRLevels, colors) {
+        this._xEntry   = xEntry;
+        this._xRight   = xRight;
+        this._yEntry   = yEntry;
+        this._ySl      = ySl;
+        this._yTpFinal = yTpFinal;
+        this._isLong   = isLong;
+        this._maxRR    = maxRR;
+        this._yRRLevels = yRRLevels;
+        this._colors   = colors;
       }
-
       draw(target) {
         target.useBitmapCoordinateSpace(scope => {
+          if (this._xEntry === null || this._xRight === null) return;
+          if (this._yEntry === null || this._ySl === null || this._yTpFinal === null) return;
+
           const ctx = scope.context;
           const pr  = scope.horizontalPixelRatio;
           const vr  = scope.verticalPixelRatio;
 
-          if (this._xEntry === null || this._xRight === null) return;
+          const x1 = Math.round(this._xEntry  * pr);
+          const x2 = Math.round(this._xRight  * pr);
 
-          const x1 = Math.round(this._xEntry * pr);
-          const x2 = Math.round(this._xRight * pr);
+          const yEntry   = Math.round(this._yEntry   * vr);
+          const ySl      = Math.round(this._ySl      * vr);
+          const yTpFinal = Math.round(this._yTpFinal * vr);
 
-          // SL distance
-          const slDist = Math.abs(this._entry - this._sl);
-          if (slDist <= 0) return;
+          // TP box (entrée → TP final)
+          ctx.fillStyle = this._colors.tp_fill || 'rgba(0,150,136,0.3)';
+          ctx.fillRect(x1, Math.min(yEntry, yTpFinal), x2 - x1, Math.abs(yTpFinal - yEntry));
 
-          // Prix TP final
-          const finalTp  = this._isLong
-            ? this._entry + slDist * this._maxRR
-            : this._entry - slDist * this._maxRR;
-
-          const tpTop    = this._isLong ? finalTp   : this._entry;
-          const tpBottom = this._isLong ? this._entry: finalTp;
-
-          const slTop    = this._isLong ? this._entry: this._sl;
-          const slBottom = this._isLong ? this._sl   : this._entry;
-
-          const yTpTop    = Math.round(scope.seriesPriceToCoordinate(tpTop)    * vr);
-          const yTpBottom = Math.round(scope.seriesPriceToCoordinate(tpBottom) * vr);
-          const ySlTop    = Math.round(scope.seriesPriceToCoordinate(slTop)    * vr);
-          const ySlBottom = Math.round(scope.seriesPriceToCoordinate(slBottom) * vr);
-          const yEntry    = Math.round(scope.seriesPriceToCoordinate(this._entry) * vr);
-
-          // TP box
-          ctx.fillStyle = this._colors.tp_fill || 'rgba(0,150,136,0.5)';
-          ctx.fillRect(x1, Math.min(yTpTop, yTpBottom), x2 - x1, Math.abs(yTpBottom - yTpTop));
-
-          // SL box
-          ctx.fillStyle = this._colors.sl_fill || 'rgba(239,83,80,0.5)';
-          ctx.fillRect(x1, Math.min(ySlTop, ySlBottom), x2 - x1, Math.abs(ySlBottom - ySlTop));
+          // SL box (entrée → SL)
+          ctx.fillStyle = this._colors.sl_fill || 'rgba(239,83,80,0.3)';
+          ctx.fillRect(x1, Math.min(yEntry, ySl), x2 - x1, Math.abs(ySl - yEntry));
 
           // Ligne d'entrée
           ctx.strokeStyle = this._colors.entry_line || '#ffffff';
           ctx.lineWidth   = pr * 2;
+          ctx.setLineDash([]);
           ctx.beginPath();
           ctx.moveTo(x1, yEntry);
           ctx.lineTo(x2, yEntry);
           ctx.stroke();
 
-          // Lignes RR
-          ctx.strokeStyle = this._colors.rr_line || 'rgba(255,255,255,0.3)';
+          // Lignes RR pointillées
+          ctx.strokeStyle = this._colors.rr_line || 'rgba(255,255,255,0.25)';
           ctx.lineWidth   = pr;
           ctx.setLineDash([4 * pr, 4 * pr]);
-          for (let i = 1; i <= this._maxRR; i++) {
-            const lvlPrice = this._isLong
-              ? this._entry + slDist * i
-              : this._entry - slDist * i;
-            const yLvl = Math.round(scope.seriesPriceToCoordinate(lvlPrice) * vr);
+          for (const yLvl of this._yRRLevels) {
+            if (yLvl === null) continue;
+            const y = Math.round(yLvl * vr);
             ctx.beginPath();
-            ctx.moveTo(x1, yLvl);
-            ctx.lineTo(x2, yLvl);
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x2, y);
             ctx.stroke();
           }
           ctx.setLineDash([]);
@@ -213,19 +218,36 @@
     class TradeBoxView {
       constructor(source) { this._src = source; }
       update() {
-        const ts = this._src._chart.timeScale();
-        this._src._xEntry = ts.timeToCoordinate(this._src._timeEntry);
-        this._src._xRight = ts.timeToCoordinate(this._src._timeRight);
+        const s  = this._src;
+        const ts = s._chart.timeScale();
+
+        s._xEntry = ts.timeToCoordinate(s._timeEntry);
+        s._xRight = ts.timeToCoordinate(s._timeRight);
+
+        const slDist  = Math.abs(s._entry - s._sl);
+        const finalTp = s._isLong
+          ? s._entry + slDist * s._maxRR
+          : s._entry - slDist * s._maxRR;
+
+        s._yEntry   = s._series.priceToCoordinate(s._entry);
+        s._ySl      = s._series.priceToCoordinate(s._sl);
+        s._yTpFinal = s._series.priceToCoordinate(finalTp);
+
+        s._yRRLevels = [];
+        for (let i = 1; i <= s._maxRR; i++) {
+          const lvl = s._isLong
+            ? s._entry + slDist * i
+            : s._entry - slDist * i;
+          s._yRRLevels.push(s._series.priceToCoordinate(lvl));
+        }
       }
       renderer() {
+        const s = this._src;
         return new TradeBoxRenderer(
-          this._src._xEntry,
-          this._src._xRight,
-          this._src._entry,
-          this._src._sl,
-          this._src._isLong,
-          this._src._maxRR,
-          this._src._colors
+          s._xEntry, s._xRight,
+          s._yEntry, s._ySl, s._yTpFinal,
+          s._isLong, s._maxRR, s._yRRLevels,
+          s._colors
         );
       }
     }
@@ -243,11 +265,15 @@
         this._colors    = colors;
         this._xEntry    = null;
         this._xRight    = null;
+        this._yEntry    = null;
+        this._ySl       = null;
+        this._yTpFinal  = null;
+        this._yRRLevels = [];
         this._views     = [new TradeBoxView(this)];
       }
       updateAllViews() { this._views.forEach(v => v.update()); }
       paneViews()      { return this._views; }
-    }      
+    }
 
     // ─────────────────────────────────────────────────────────────
     // CHART
@@ -286,10 +312,7 @@
           chart, candleSeries,
           Number(ses.time_start), ses.price_top,
           Number(ses.time_end),   ses.price_bottom,
-          {
-            fillColor:   ses.color,
-            borderColor: ses.border_color,
-          }
+          { fillColor: ses.color, borderColor: ses.border_color }
         ));
       });
     }
@@ -305,16 +328,12 @@
         shape:    t.shape    || 'circle',
         text:     t.text     || '',
       }));
-
-      // API officielle v5: createSeriesMarkers(series, markers)
       LightweightCharts.createSeriesMarkers(candleSeries, markers);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 4. (PRICE_LINES non utilisés pour l'instant)
+    // 4. PRICE_LINES (non affichées pour l'instant)
     // ─────────────────────────────────────────────────────────────
-    // PRICE_LINES est disponible si tu veux réactiver des niveaux plus tard,
-    // mais on ne les dessine pas ici pour garder le template minimal.
 
     // ─────────────────────────────────────────────────────────────
     // 5. ZONES (OB, FVG...)
@@ -339,8 +358,7 @@
     if (typeof TRADE_BOXES !== 'undefined' && TRADE_BOXES.length > 0) {
       TRADE_BOXES.forEach(tb => {
         candleSeries.attachPrimitive(new TradeBoxPrimitive(
-          chart,
-          candleSeries,
+          chart, candleSeries,
           Number(tb.time_entry),
           Number(tb.time_right),
           tb.entry,
@@ -350,7 +368,7 @@
           tb.colors || {}
         ));
       });
-    }    
+    }
 
     // ─────────────────────────────────────────────────────────────
     // FIT & HUD
@@ -361,17 +379,12 @@
     if (CANDLES.length > 0) {
       const first = CANDLES[0];
       const last  = CANDLES[CANDLES.length - 1];
-
-      // time est en timestamp Unix (secondes), on reconstruit une date locale
       const firstDate = new Date(first.time * 1000);
-      const lastDate  = new Date(last.time * 1000);
-
+      const lastDate  = new Date(last.time  * 1000);
       const pad = (n) => String(n).padStart(2, '0');
-
       const fmtDate = (d) =>
         `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-      // Ces valeurs viennent du Python via config, déjà encodées en JSON
       const symbol    = {{symbol}};
       const timeframe = {{timeframe}};
 
@@ -412,6 +425,57 @@
       const entry = getTQScoreAt(param.time);
       if (entry) showBadge(entry.score, entry.color);
     });
+
+    // ─────────────────────────────────────────────────────────────
+    // NAVIGATION TRADES
+    // ─────────────────────────────────────────────────────────────
+    if (typeof TRADE_BOXES !== 'undefined' && TRADE_BOXES.length > 0) {
+      const nav     = document.getElementById('trade-nav');
+      const counter = document.getElementById('nav-counter');
+      nav.style.display = 'flex';
+
+      let currentIdx = 0;
+      const total = TRADE_BOXES.length;
+      const MARGIN = 10; // bougies de marge de chaque côté
+
+      function goToTrade(idx) {
+        currentIdx = (idx + total) % total;
+        const tb = TRADE_BOXES[currentIdx];
+
+        const entryIdx = CANDLES.findIndex(c => c.time >= tb.time_entry);
+        if (entryIdx === -1) {
+          counter.textContent = `Trade ${currentIdx + 1} / ${total}`;
+          return;
+        }
+
+        // Récupérer le range visible actuel → calculer sa largeur en barres
+        const visibleRange = chart.timeScale().getVisibleLogicalRange();
+        const visibleBars  = visibleRange
+          ? Math.round(visibleRange.to - visibleRange.from)
+          : 60;
+
+        // Centrer entryIdx au milieu de la fenêtre visible
+        const halfBars = Math.round(visibleBars / 2);
+        const center   = entryIdx - halfBars;
+
+        chart.timeScale().setVisibleLogicalRange({
+          from: center,
+          to:   center + visibleBars,
+        });
+
+        counter.textContent = `Trade ${currentIdx + 1} / ${total}`;
+      }
+      document.getElementById('nav-prev').addEventListener('click', () => goToTrade(currentIdx - 1));
+      document.getElementById('nav-next').addEventListener('click', () => goToTrade(currentIdx + 1));
+
+      // Raccourcis clavier ← →
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft')  goToTrade(currentIdx - 1);
+        if (e.key === 'ArrowRight') goToTrade(currentIdx + 1);
+      });
+
+      goToTrade(0); // centrer sur le premier trade au chargement
+    }        
 
   </script>
 </body>
