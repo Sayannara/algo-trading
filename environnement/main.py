@@ -26,7 +26,7 @@ df = charger_donnees(
     timeframe = config.TIMEFRAME,
 )
 
-tz = pytz.timezone(config.TIMEZONE)   # ← ajouter
+tz = pytz.timezone(config.TIMEZONE) 
 
 candles = [
     {"time": to_tz_ts(r.time, tz), "open": float(r.Open),   # ← to_tz_ts au lieu de int(r.time.timestamp())
