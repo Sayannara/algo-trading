@@ -9,7 +9,7 @@
 TIMEZONE = 'Europe/Zurich'
 
 SYMBOL    = "AUDUSD"
-DATE_FROM = "2024-01-01"
+DATE_FROM = "2023-01-01"
 DATE_TO   = "2026-04-29"
 TIMEFRAME = "M5"
 
