@@ -38,6 +38,8 @@ trades      = []
 price_lines = []
 
 # ── INDICATEURS ───────────────────────────────────────────────
+
+## Session
 sessions_zones   = []
 sessions_history = {}
 
@@ -47,6 +49,7 @@ if config.INDICATORS.get('sessions', False):
     print(f"   ↳ Sessions : {len(sessions_zones)} zones")
 
 
+## Trend quality
 tq_score   = 50.0
 tq_text    = "En attente..."
 tq_color   = "#9E9E9E"
@@ -57,6 +60,8 @@ if config.INDICATORS.get('trend_quality', False):
     from indicators.trend_quality import compute_trend_quality
     tq_score, tq_text, tq_color, tq_labels, tq_history = compute_trend_quality(df, config)
 
+
+## Display trade
 from display_trades import load_trades
 if config.INDICATORS.get('trades', False):
     trades_payload = load_trades(
@@ -69,6 +74,20 @@ if config.INDICATORS.get('trades', False):
 else:
     trades      = []
     price_lines = []
+
+## Trade boxes
+trade_boxes = []
+if config.INDICATORS.get('trade_boxes', False):
+    from display_trades import load_trade_boxes
+    trade_boxes = load_trade_boxes(
+        csv_path=os.path.join(ROOT, 'trades_result.csv'),
+        symbol=config.SYMBOL,
+        tz_name=config.TIMEZONE,
+        candles=candles,
+        timeframe=config.TIMEFRAME,
+        max_rr=config.MAX_RR,
+    )
+    print(f"   ↳ Trade boxes : {len(trade_boxes)} boxes")
 
 # ── INJECTION ─────────────────────────────────────────────────
 html = open(TEMPLATE, encoding="utf-8").read()
@@ -91,6 +110,8 @@ html = html.replace("{{tq_history}}",    json.dumps(tq_history))
 
 html = html.replace("{{symbol}}",    json.dumps(config.SYMBOL))
 html = html.replace("{{timeframe}}", json.dumps(config.TIMEFRAME))
+
+html = html.replace("{{trade_boxes}}", json.dumps(trade_boxes))
 
 open(OUTPUT, "w", encoding="utf-8").write(html)
 # webbrowser.open(f"file://{OUTPUT}")

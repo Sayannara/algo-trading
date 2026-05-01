@@ -24,6 +24,7 @@ INDICATORS = {
     'sessions':       True,
     'trend_quality':  True,
     'trades':         True, 
+    "trade_boxes":    True,
 }
 
 # ── Sessions ──────────────────────────────────────────────────

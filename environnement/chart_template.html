@@ -130,6 +130,126 @@
     }
 
     // ─────────────────────────────────────────────────────────────
+    // TRADE BOX PRIMITIVE (zone de trade locale)
+    // ─────────────────────────────────────────────────────────────
+    class TradeBoxRenderer {
+      constructor(xEntry, xRight, entry, sl, isLong, maxRR, colors) {
+        this._xEntry = xEntry;
+        this._xRight = xRight;
+        this._entry  = entry;
+        this._sl     = sl;
+        this._isLong = isLong;
+        this._maxRR  = maxRR;
+        this._colors = colors;
+      }
+
+      draw(target) {
+        target.useBitmapCoordinateSpace(scope => {
+          const ctx = scope.context;
+          const pr  = scope.horizontalPixelRatio;
+          const vr  = scope.verticalPixelRatio;
+
+          if (this._xEntry === null || this._xRight === null) return;
+
+          const x1 = Math.round(this._xEntry * pr);
+          const x2 = Math.round(this._xRight * pr);
+
+          // SL distance
+          const slDist = Math.abs(this._entry - this._sl);
+          if (slDist <= 0) return;
+
+          // Prix TP final
+          const finalTp  = this._isLong
+            ? this._entry + slDist * this._maxRR
+            : this._entry - slDist * this._maxRR;
+
+          const tpTop    = this._isLong ? finalTp   : this._entry;
+          const tpBottom = this._isLong ? this._entry: finalTp;
+
+          const slTop    = this._isLong ? this._entry: this._sl;
+          const slBottom = this._isLong ? this._sl   : this._entry;
+
+          const yTpTop    = Math.round(scope.seriesPriceToCoordinate(tpTop)    * vr);
+          const yTpBottom = Math.round(scope.seriesPriceToCoordinate(tpBottom) * vr);
+          const ySlTop    = Math.round(scope.seriesPriceToCoordinate(slTop)    * vr);
+          const ySlBottom = Math.round(scope.seriesPriceToCoordinate(slBottom) * vr);
+          const yEntry    = Math.round(scope.seriesPriceToCoordinate(this._entry) * vr);
+
+          // TP box
+          ctx.fillStyle = this._colors.tp_fill || 'rgba(0,150,136,0.5)';
+          ctx.fillRect(x1, Math.min(yTpTop, yTpBottom), x2 - x1, Math.abs(yTpBottom - yTpTop));
+
+          // SL box
+          ctx.fillStyle = this._colors.sl_fill || 'rgba(239,83,80,0.5)';
+          ctx.fillRect(x1, Math.min(ySlTop, ySlBottom), x2 - x1, Math.abs(ySlBottom - ySlTop));
+
+          // Ligne d'entrée
+          ctx.strokeStyle = this._colors.entry_line || '#ffffff';
+          ctx.lineWidth   = pr * 2;
+          ctx.beginPath();
+          ctx.moveTo(x1, yEntry);
+          ctx.lineTo(x2, yEntry);
+          ctx.stroke();
+
+          // Lignes RR
+          ctx.strokeStyle = this._colors.rr_line || 'rgba(255,255,255,0.3)';
+          ctx.lineWidth   = pr;
+          ctx.setLineDash([4 * pr, 4 * pr]);
+          for (let i = 1; i <= this._maxRR; i++) {
+            const lvlPrice = this._isLong
+              ? this._entry + slDist * i
+              : this._entry - slDist * i;
+            const yLvl = Math.round(scope.seriesPriceToCoordinate(lvlPrice) * vr);
+            ctx.beginPath();
+            ctx.moveTo(x1, yLvl);
+            ctx.lineTo(x2, yLvl);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+        });
+      }
+    }
+
+    class TradeBoxView {
+      constructor(source) { this._src = source; }
+      update() {
+        const ts = this._src._chart.timeScale();
+        this._src._xEntry = ts.timeToCoordinate(this._src._timeEntry);
+        this._src._xRight = ts.timeToCoordinate(this._src._timeRight);
+      }
+      renderer() {
+        return new TradeBoxRenderer(
+          this._src._xEntry,
+          this._src._xRight,
+          this._src._entry,
+          this._src._sl,
+          this._src._isLong,
+          this._src._maxRR,
+          this._src._colors
+        );
+      }
+    }
+
+    class TradeBoxPrimitive {
+      constructor(chart, series, timeEntry, timeRight, entry, sl, isLong, maxRR, colors = {}) {
+        this._chart     = chart;
+        this._series    = series;
+        this._timeEntry = timeEntry;
+        this._timeRight = timeRight;
+        this._entry     = entry;
+        this._sl        = sl;
+        this._isLong    = isLong;
+        this._maxRR     = maxRR;
+        this._colors    = colors;
+        this._xEntry    = null;
+        this._xRight    = null;
+        this._views     = [new TradeBoxView(this)];
+      }
+      updateAllViews() { this._views.forEach(v => v.update()); }
+      paneViews()      { return this._views; }
+    }      
+
+    // ─────────────────────────────────────────────────────────────
     // CHART
     // ─────────────────────────────────────────────────────────────
     const chart = LightweightCharts.createChart(
@@ -214,9 +334,27 @@
     }
 
     // ─────────────────────────────────────────────────────────────
+    // 6. TRADE BOXES (optionnel)
+    // ─────────────────────────────────────────────────────────────
+    if (typeof TRADE_BOXES !== 'undefined' && TRADE_BOXES.length > 0) {
+      TRADE_BOXES.forEach(tb => {
+        candleSeries.attachPrimitive(new TradeBoxPrimitive(
+          chart,
+          candleSeries,
+          Number(tb.time_entry),
+          Number(tb.time_right),
+          tb.entry,
+          tb.sl,
+          !!tb.is_long,
+          tb.max_rr || 3,
+          tb.colors || {}
+        ));
+      });
+    }    
+
+    // ─────────────────────────────────────────────────────────────
     // FIT & HUD
     // ─────────────────────────────────────────────────────────────
-
     chart.timeScale().fitContent();
     const hud = document.getElementById('hud');
 
@@ -233,9 +371,9 @@
       const fmtDate = (d) =>
         `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-      // Ces valeurs viennent du Python via config, donc on les réinjecte à la main ici :
-      const symbol    = "{{symbol}}" || "";
-      const timeframe = "{{timeframe}}" || "";
+      // Ces valeurs viennent du Python via config, déjà encodées en JSON
+      const symbol    = {{symbol}};
+      const timeframe = {{timeframe}};
 
       const line1 = `${symbol} ${timeframe}  |  ${fmtDate(firstDate)} → ${fmtDate(lastDate)}`;
       const line2 =
