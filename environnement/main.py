@@ -37,6 +37,7 @@ candles = [
 trades      = []
 price_lines = []
 
+
 # ── INDICATEURS ───────────────────────────────────────────────
 
 ## Session
