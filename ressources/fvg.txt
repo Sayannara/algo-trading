@@ -1,0 +1,230 @@
+//@version=6
+indicator("FVG", overlay = true)
+
+// ==========================================
+// --- PARAMÈTRES UTILISATEUR (INTERFACE) ---
+// ==========================================
+
+// --- GROUPE 1 : FILTRES CLASSIQUES ---
+string typeMesure = input.string(defval = "Ticks", title = "Unité de mesure du GAP", options = ["Ticks", "Pourcentage (%)", "ATR"], group = "Filtres Classiques")
+float minValeurForex = input.float(defval = 150.0, title = "Valeur minimale FOREX", step = 10.0, group = "Filtres Classiques")
+float minValeurAutres = input.float(defval = 1500.0, title = "Valeur minimale AUTRES", step = 10.0, group = "Filtres Classiques")
+
+// --- GROUPE 2 : FILTRE NEWS ---
+string fuseauHoraire = input.string(defval = "Europe/Zurich", title = "Fuseau Horaire", options = ["Europe/Zurich", "Europe/Paris", "Europe/London", "America/New_York", "Etc/UTC"], group = "Filtre News")
+string heuresNewsInput = input.string(defval = "13:30-14:00/16:00-16:30", title = "Heures des News (Format: HH:MM-HH:MM/HH:MM-HH:MM)", tooltip = "Séparez chaque créneau horaire par une barre oblique ( / ). Exemple: 13:30-13:35/14:15-14:20/15:00-15:05", group = "Filtre News")
+string modeAffichage = input.string(defval = "Tout afficher (Marquer les News)", title = "Mode d'affichage", options = ["Tout afficher (Marquer les News)", "Tout SANS les News", "N'afficher QUE les News"], group = "Filtre News")
+
+// ==========================================
+// --- FONCTION DE DÉTECTION DES NEWS ---
+// ==========================================
+f_nettoyerSession(chaineOriginale) =>
+    string chaineSansPoints = str.replace_all(chaineOriginale, ":", "")
+    string sessionFinale = str.replace_all(chaineSansPoints, "/", ",")
+    sessionFinale
+
+string sessionFormatee = f_nettoyerSession(heuresNewsInput)
+bool estHeureNews = not na(time(timeframe.period, sessionFormatee, fuseauHoraire))
+
+// ==========================================
+// --- DÉTECTION DU CONTEXTE ---
+// ==========================================
+bool estForex = (syminfo.type == "forex")
+float minValeurActive = estForex ? minValeurForex : minValeurAutres
+float valeurATR = ta.atr(14)
+
+// ==========================================
+// --- LOGIQUE DE BASE DU GAP ---
+// ==========================================
+bool conditionGapHaussier = low > high[2]
+bool conditionGapBaissier = high < low[2]
+
+// ==========================================
+// --- VARIABLES DE GROUPEMENT (MÉMOIRE) ---
+// ==========================================
+var box boiteHausseActuelle = na
+var int indexDernierGapHausse = 0
+var float topGlobalHausse = 0.0
+var float botGlobalHausse = 0.0
+var float sommePrixHausse = 0.0 
+var bool groupeContientNewsHausse = false
+
+var box boiteBaisseActuelle = na
+var int indexDernierGapBaisse = 0
+var float topGlobalBaisse = 0.0
+var float botGlobalBaisse = 0.0
+var float sommePrixBaisse = 0.0
+var bool groupeContientNewsBaisse = false
+
+// Variables pour déclencher l'alerte
+bool declencherAlerteHausse = false
+bool declencherAlerteBaisse = false
+
+// ==========================================
+// --- VARIABLES POUR LE LOG (TABLEAU) ---
+// ==========================================
+// Création d'un tableau vide pour stocker la taille de chaque GAP validé
+var validGapsArray = array.new_float()
+
+var float lastHausseSize = 0.0
+var bool lastHausseValid = false
+
+var float lastBaisseSize = 0.0
+var bool lastBaisseValid = false
+
+// ==========================================
+// --- TRAITEMENT DES GAPS HAUSSIERS ---
+// ==========================================
+if conditionGapHaussier
+    float gapPrixActuel = low - high[2]
+    
+    if bar_index == indexDernierGapHausse + 1
+        topGlobalHausse := math.max(topGlobalHausse, low)
+        botGlobalHausse := math.min(botGlobalHausse, high[2])
+        sommePrixHausse += gapPrixActuel
+        if estHeureNews
+            groupeContientNewsHausse := true
+    else
+        // NOUVEAU GAP : On ajoute la taille du GAP précédent au tableau s'il était valide
+        if lastHausseValid
+            array.push(validGapsArray, lastHausseSize)
+            
+        topGlobalHausse := low
+        botGlobalHausse := high[2]
+        sommePrixHausse := gapPrixActuel
+        groupeContientNewsHausse := estHeureNews
+        
+    float valeurAffichee = typeMesure == "Ticks" ? sommePrixHausse / syminfo.mintick : typeMesure == "Pourcentage (%)" ? (sommePrixHausse / close) * 100 : sommePrixHausse / valeurATR
+    string baseTexte = str.tostring(valeurAffichee, typeMesure == "Ticks" ? "#" : "#.##") + (typeMesure == "Ticks" ? " ticks" : typeMesure == "Pourcentage (%)" ? " %" : " ATR")
+    
+    string texteGlobal = groupeContientNewsHausse ? baseTexte + "\n[NEWS]" : baseTexte
+    
+    bool validationTaille = valeurAffichee >= minValeurActive
+    bool afficherBoite = false
+    
+    if modeAffichage == "Tout afficher (Marquer les News)"
+        afficherBoite := validationTaille
+    else if modeAffichage == "Tout SANS les News"
+        afficherBoite := validationTaille and not groupeContientNewsHausse
+    else if modeAffichage == "N'afficher QUE les News"
+        afficherBoite := validationTaille and groupeContientNewsHausse
+    
+    // Déclencheur de l'alerte
+    if validationTaille and groupeContientNewsHausse
+        declencherAlerteHausse := true
+
+    color bgCol = afficherBoite ? (groupeContientNewsHausse ? color.new(color.green, 60) : color.new(color.green, 85)) : na
+    color borderCol = afficherBoite ? color.new(color.green, 40) : na
+    color txtCol = afficherBoite ? (groupeContientNewsHausse ? color.yellow : color.white) : na
+    
+    if bar_index == indexDernierGapHausse + 1
+        box.set_top(boiteHausseActuelle, topGlobalHausse)
+        box.set_bottom(boiteHausseActuelle, botGlobalHausse)
+        box.set_right(boiteHausseActuelle, bar_index + 1)
+        box.set_text(boiteHausseActuelle, texteGlobal)
+        box.set_bgcolor(boiteHausseActuelle, bgCol)
+        box.set_border_color(boiteHausseActuelle, borderCol)
+        box.set_text_color(boiteHausseActuelle, txtCol)
+    else
+        boiteHausseActuelle := box.new(left = bar_index[1], top = topGlobalHausse, right = bar_index + 1, bottom = botGlobalHausse, border_color = borderCol, bgcolor = bgCol, text = texteGlobal, text_color = txtCol, text_size = size.small, text_halign = text.align_center, text_valign = text.align_center)
+             
+    indexDernierGapHausse := bar_index
+    
+    // Mémorisation de l'état actuel
+    lastHausseSize := valeurAffichee
+    lastHausseValid := afficherBoite
+
+
+// ==========================================
+// --- TRAITEMENT DES GAPS BAISSIERS ---
+// ==========================================
+if conditionGapBaissier
+    float gapPrixActuel = low[2] - high
+
+    if bar_index == indexDernierGapBaisse + 1
+        topGlobalBaisse := math.max(topGlobalBaisse, low[2])
+        botGlobalBaisse := math.min(botGlobalBaisse, high)
+        sommePrixBaisse += gapPrixActuel
+        if estHeureNews
+            groupeContientNewsBaisse := true
+    else
+        // NOUVEAU GAP : On ajoute la taille du GAP précédent au tableau s'il était valide
+        if lastBaisseValid
+            array.push(validGapsArray, lastBaisseSize)
+            
+        topGlobalBaisse := low[2]
+        botGlobalBaisse := high
+        sommePrixBaisse := gapPrixActuel
+        groupeContientNewsBaisse := estHeureNews
+        
+    float valeurAffichee = typeMesure == "Ticks" ? sommePrixBaisse / syminfo.mintick : typeMesure == "Pourcentage (%)" ? (sommePrixBaisse / close) * 100 : sommePrixBaisse / valeurATR
+    string baseTexte = str.tostring(valeurAffichee, typeMesure == "Ticks" ? "#" : "#.##") + (typeMesure == "Ticks" ? " ticks" : typeMesure == "Pourcentage (%)" ? " %" : " ATR")
+    
+    string texteGlobal = groupeContientNewsBaisse ? baseTexte + "\n[NEWS]" : baseTexte
+    
+    bool validationTaille = valeurAffichee >= minValeurActive
+    bool afficherBoite = false
+    
+    if modeAffichage == "Tout afficher (Marquer les News)"
+        afficherBoite := validationTaille
+    else if modeAffichage == "Tout SANS les News"
+        afficherBoite := validationTaille and not groupeContientNewsBaisse
+    else if modeAffichage == "N'afficher QUE les News"
+        afficherBoite := validationTaille and groupeContientNewsBaisse
+    
+    // Déclencheur de l'alerte
+    if validationTaille and groupeContientNewsBaisse
+        declencherAlerteBaisse := true
+
+    color bgCol = afficherBoite ? (groupeContientNewsBaisse ? color.new(color.red, 60) : color.new(color.red, 85)) : na
+    color borderCol = afficherBoite ? color.new(color.red, 40) : na
+    color txtCol = afficherBoite ? (groupeContientNewsBaisse ? color.yellow : color.white) : na
+    
+    if bar_index == indexDernierGapBaisse + 1
+        box.set_top(boiteBaisseActuelle, topGlobalBaisse)
+        box.set_bottom(boiteBaisseActuelle, botGlobalBaisse)
+        box.set_right(boiteBaisseActuelle, bar_index + 1)
+        box.set_text(boiteBaisseActuelle, texteGlobal)
+        box.set_bgcolor(boiteBaisseActuelle, bgCol)
+        box.set_border_color(boiteBaisseActuelle, borderCol)
+        box.set_text_color(boiteBaisseActuelle, txtCol)
+    else
+        boiteBaisseActuelle := box.new(left = bar_index[1], top = topGlobalBaisse, right = bar_index + 1, bottom = botGlobalBaisse, border_color = borderCol, bgcolor = bgCol, text = texteGlobal, text_color = txtCol, text_size = size.small, text_halign = text.align_center, text_valign = text.align_center)
+             
+    indexDernierGapBaisse := bar_index
+    
+    // Mémorisation de l'état actuel
+    lastBaisseSize := valeurAffichee
+    lastBaisseValid := afficherBoite
+
+// ==========================================
+// --- CONDITIONS D'ALERTES (MENU TRADINGVIEW) ---
+// ==========================================
+conditionAlerteGlobale = declencherAlerteHausse or declencherAlerteBaisse
+alertcondition(conditionAlerteGlobale, title = "⚠️ Nouveau GAP News Détecté", message = "Un GAP (Imbalance) lié vient d'être validé par vos filtres de taille !")
+
+// ==========================================
+// --- LOG DE LA MOYENNE ET MÉDIANE DES GAPS ---
+// ==========================================
+if barstate.islast
+    // On copie le tableau pour ajouter les tout derniers Gaps en cours sans polluer l'historique
+    float[] finalGapsArray = array.copy(validGapsArray)
+    
+    if lastHausseValid
+        array.push(finalGapsArray, lastHausseSize)
+        
+    if lastBaisseValid
+        array.push(finalGapsArray, lastBaisseSize)
+        
+    int totalCount = array.size(finalGapsArray)
+    
+    // Calcul automatique avec les fonctions natives des arrays Pine Script
+    float moyenne = totalCount > 0 ? array.avg(finalGapsArray) : 0.0
+    float mediane = totalCount > 0 ? array.median(finalGapsArray) : 0.0
+    
+    string uniteText = typeMesure == "Ticks" ? "ticks" : typeMesure == "Pourcentage (%)" ? "%" : "ATR"
+    
+    // Affichage formaté dans les logs
+    log.info("📊 Bilan FVG sur " + str.tostring(totalCount) + " GAPs filtrés :\n" + 
+             "• Moyenne : " + str.tostring(moyenne, "#.##") + " " + uniteText + "\n" +
+             "• Médiane : " + str.tostring(mediane, "#.##") + " " + uniteText)

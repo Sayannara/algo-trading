@@ -73,6 +73,8 @@
     const IND_TQ_LABELS= {{ind_tq_labels}};
     const TQ_HISTORY   = {{tq_history}};
     const TRADE_BOXES  = {{trade_boxes}};
+    const OB_FVG_DATA  = {{ob_fvg_data}};
+    const FVG_DATA     = {{fvg_data}};
 
     // ─────────────────────────────────────────────────────────────
     // RECHERCHE SCORE PAR TIMESTAMP
@@ -112,6 +114,13 @@
             ctx.strokeStyle = this._opts.borderColor;
             ctx.lineWidth = pr;
             ctx.strokeRect(x1 + 0.5, y1 + 0.5, x2 - x1 - 1, y2 - y1 - 1);
+          }
+          if (this._opts.text) {
+            ctx.fillStyle = this._opts.textColor || '#ffffff';
+            ctx.font = `${Math.round(11 * pr)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this._opts.text, x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2);
           }
         });
       }
@@ -366,6 +375,74 @@
           !!tb.is_long,
           tb.max_rr || 3,
           tb.colors || {}
+        ));
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 7. OB + FVG
+    // ─────────────────────────────────────────────────────────────
+    if (typeof OB_FVG_DATA !== 'undefined' && OB_FVG_DATA.length > 0) {
+      const METHOD_COLORS = {
+        1: {
+          bullish: { fill: 'rgba(41, 98, 255, 0.2)', border: '#2962FF' },
+          bearish: { fill: 'rgba(255, 23, 68, 0.2)', border: '#FF1744' }
+        },
+        2: {
+          bullish: { fill: 'rgba(0, 188, 212, 0.25)', border: '#00BCD4' },
+          bearish: { fill: 'rgba(255, 109, 0, 0.25)', border: '#FF6D00' }
+        },
+        3: {
+          bullish: { fill: 'rgba(0, 230, 118, 0.3)', border: '#00E676' },
+          bearish: { fill: 'rgba(213, 0, 249, 0.3)', border: '#D500F9' }
+        }
+      };
+
+      OB_FVG_DATA.forEach(pair => {
+        const fvg = pair.fvg;
+        const ob  = pair.ob;
+
+        // FVG Box
+        const fvgFill = fvg.direction === 'bullish' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+        const fvgBorder = fvg.direction === 'bullish' ? 'rgba(76, 175, 80, 0.6)' : 'rgba(244, 67, 54, 0.6)';
+        const fvgTextCol = fvg.direction === 'bullish' ? '#4CAF50' : '#F44336';
+        
+        candleSeries.attachPrimitive(new RectPrimitive(
+          chart, candleSeries,
+          Number(fvg.start_time), fvg.top,
+          Number(fvg.end_time),   fvg.bot,
+          { fillColor: fvgFill, borderColor: fvgBorder, text: fvg.text || '', textColor: fvgTextCol }
+        ));
+
+        // OB Box
+        if (ob) {
+          const colors = METHOD_COLORS[ob.method][fvg.direction];
+          const obTextCol = colors.border;
+          candleSeries.attachPrimitive(new RectPrimitive(
+            chart, candleSeries,
+            Number(ob.start_time), ob.top,
+            Number(ob.end_time),   ob.bot,
+            { fillColor: colors.fill, borderColor: colors.border, text: ob.text || '', textColor: obTextCol }
+          ));
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 8. FVG SIMPLE
+    // ─────────────────────────────────────────────────────────────
+    if (typeof FVG_DATA !== 'undefined' && FVG_DATA.length > 0) {
+      FVG_DATA.forEach(fvg => {
+        // FVG Box
+        const fvgFill = fvg.direction === 'bullish' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)';
+        const fvgBorder = fvg.direction === 'bullish' ? 'rgba(76, 175, 80, 0.6)' : 'rgba(244, 67, 54, 0.6)';
+        const fvgTextCol = fvg.direction === 'bullish' ? '#4CAF50' : '#F44336';
+        
+        candleSeries.attachPrimitive(new RectPrimitive(
+          chart, candleSeries,
+          Number(fvg.start_time), fvg.top,
+          Number(fvg.end_time),   fvg.bot,
+          { fillColor: fvgFill, borderColor: fvgBorder, text: fvg.text || '', textColor: fvgTextCol }
         ));
       });
     }

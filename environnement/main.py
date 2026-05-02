@@ -17,8 +17,6 @@ TEMPLATE = os.path.join(ROOT, "chart_template.html")
 OUTPUT   = os.path.join(ROOT, "output.html")
 
 # ── DONNÉES ───────────────────────────────────────────────────
-
-
 df = charger_donnees(
     symbol    = config.SYMBOL,
     date_from = config.DATE_FROM,
@@ -90,6 +88,45 @@ if config.INDICATORS.get('trade_boxes', False):
     )
     print(f"   ↳ Trade boxes : {len(trade_boxes)} boxes")
 
+# ── OB + FVG ──────────────────────────────────────────────────
+ob_fvg_data = []
+if config.INDICATORS.get('ob_fvg', False):
+    from indicators.ob_fvg import detect_ob_fvg
+    raw_ob_fvg = detect_ob_fvg(df, config)
+    
+    for item in raw_ob_fvg:
+        fvg = item['fvg']
+        ob = item['ob']
+        
+        # Mapping index -> timestamp (heure locale via candles)
+        fvg['start_time'] = candles[fvg['start_idx']]['time']
+        fvg['end_time']   = candles[fvg['end_idx']]['time']
+        
+        if ob:
+            ob['start_time']  = candles[ob['start_idx']]['time']
+            
+            # Extension de l'OB de X jours
+            ext_days = config.OB_DETECTION.get('ob_extension_days', 3)
+            ob['end_time']    = candles[ob['end_idx']]['time'] + (ext_days * 24 * 60 * 60)
+            
+        ob_fvg_data.append({"fvg": fvg, "ob": ob})
+        
+    print(f"   ↳ OB+FVG : {len(ob_fvg_data)} paires trouvées")
+
+# ── FVG Simple ────────────────────────────────────────────────
+fvg_data = []
+if config.INDICATORS.get('fvg', False):
+    from indicators.fvg import detect_fvg
+    raw_fvg = detect_fvg(df, config)
+    
+    for fvg in raw_fvg:
+        # Mapping index -> timestamp (heure locale via candles)
+        fvg['start_time'] = candles[fvg['start_idx']]['time']
+        fvg['end_time']   = candles[fvg['end_idx']]['time']
+        fvg_data.append(fvg)
+        
+    print(f"   ↳ FVG : {len(fvg_data)} gaps trouvés")
+
 # ── INJECTION ─────────────────────────────────────────────────
 html = open(TEMPLATE, encoding="utf-8").read()
 html = html.replace("{{candles}}",       json.dumps(candles))
@@ -113,6 +150,8 @@ html = html.replace("{{symbol}}",    json.dumps(config.SYMBOL))
 html = html.replace("{{timeframe}}", json.dumps(config.TIMEFRAME))
 
 html = html.replace("{{trade_boxes}}", json.dumps(trade_boxes))
+html = html.replace("{{ob_fvg_data}}", json.dumps(ob_fvg_data))
+html = html.replace("{{fvg_data}}", json.dumps(fvg_data))
 
 open(OUTPUT, "w", encoding="utf-8").write(html)
 # webbrowser.open(f"file://{OUTPUT}")

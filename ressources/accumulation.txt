@@ -1,0 +1,64 @@
+//@version=6
+indicator("Détecteur de Zones d'Accumulation", overlay=true, max_boxes_count=100)
+
+// ==========================================
+// 1. PARAMÈTRES UTILISATEUR
+// ==========================================
+accum_len = input.int(6, title="Nombre de bougies (Taille du bloc)", tooltip="Nombre de bougies consécutives pour valider une accumulation.")
+atr_len = input.int(14, title="Période ATR")
+atr_mult = input.float(1.2, step=0.1, title="Multiplicateur ATR (Tolérance)", tooltip="Plus la valeur est basse, plus la zone doit être étroite/compressée.")
+
+// Couleurs
+box_color = input.color(color.new(color.blue, 80), title="Couleur de l'accumulation")
+border_color = input.color(color.blue, title="Couleur de bordure")
+
+// ==========================================
+// 2. DÉTECTION DE L'ACCUMULATION
+// ==========================================
+// Calcul des plus hauts et plus bas du bloc actuel
+highest_high = ta.highest(high, accum_len)
+lowest_low   = ta.lowest(low, accum_len)
+box_height   = highest_high - lowest_low
+
+// ATR pour juger si la taille de la boîte est "anormalement petite" (compression)
+atr = ta.atr(atr_len)
+
+// Un booléen explicite initialisé à false (règle v6)
+bool is_accumulating = false
+
+// Condition : La hauteur du bloc est inférieure à notre tolérance dynamique
+if box_height < (atr * atr_mult)
+    is_accumulating := true
+
+// ==========================================
+// 3. GESTION DE LA BOÎTE (Maintien et Cassure)
+// ==========================================
+// On utilise 'var' pour stocker la boîte active et ses niveaux
+var box active_box = na
+var float active_top = na
+var float active_bottom = na
+var bool in_zone = false
+
+// A. Début d'une nouvelle zone (si on n'est pas déjà dans une zone)
+if is_accumulating and not in_zone
+    // On passe en mode "Zone active"
+    in_zone := true
+    active_top := highest_high
+    active_bottom := lowest_low
+    
+    // On crée la nouvelle boîte
+    active_box := box.new(left=bar_index - accum_len, top=active_top, bottom=active_bottom, right=bar_index, 
+                          bgcolor=box_color, border_color=border_color, text="ACCUMULATION", text_color=border_color, text_size=size.tiny)
+
+// B. Mise à jour de la zone existante (Extension ou Cassure)
+if in_zone
+    // Vérification de la cassure (Breakout) : le prix clôture en dehors de la boîte
+    bool is_breakout_up = close > active_top
+    bool is_breakout_down = close < active_bottom
+    
+    if is_breakout_up or is_breakout_down
+        // Le prix a cassé la zone, on la termine
+        in_zone := false
+    else
+        // Le prix est toujours dans la zone, on étend la boîte vers la droite
+        box.set_right(active_box, bar_index)
