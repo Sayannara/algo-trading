@@ -31,6 +31,11 @@ INDICATORS = {
     'ob_fvg':         True,
 }
 
+# ── Stratégies actives ────────────────────────────────────────
+STRATEGIES = {
+    'bounce_ob': True,
+}
+
 # ── Sessions ──────────────────────────────────────────────────
 
 SESSIONS = {

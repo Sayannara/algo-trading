@@ -38,7 +38,7 @@ price_lines = []
 
 # ── INDICATEURS ───────────────────────────────────────────────
 
-## Session
+## Sessions
 sessions_zones   = []
 sessions_history = {}
 
@@ -88,7 +88,7 @@ if config.INDICATORS.get('trade_boxes', False):
     )
     print(f"   ↳ Trade boxes : {len(trade_boxes)} boxes")
 
-# ── OB + FVG ──────────────────────────────────────────────────
+## OB + FVG
 ob_fvg_data = []
 if config.INDICATORS.get('ob_fvg', False):
     from indicators.ob_fvg import detect_ob_fvg
@@ -120,7 +120,7 @@ if config.INDICATORS.get('ob_fvg', False):
         
     print(f"   ↳ OB+FVG : {len(ob_fvg_data)} paires trouvées")
 
-# ── FVG Simple ────────────────────────────────────────────────
+## FVG Simple
 fvg_data = []
 if config.INDICATORS.get('fvg', False):
     from indicators.fvg import detect_fvg
@@ -133,6 +133,28 @@ if config.INDICATORS.get('fvg', False):
         fvg_data.append(fvg)
         
     print(f"   ↳ FVG : {len(fvg_data)} gaps trouvés")
+
+
+# ══════════════════════════════════════════════════════════════
+# STRATÉGIES
+# ══════════════════════════════════════════════════════════════
+import importlib
+import sys
+if ROOT not in sys.path:
+    sys.path.append(ROOT)
+
+if hasattr(config, 'STRATEGIES'):
+    for strat_name, enabled in config.STRATEGIES.items():
+        if enabled:
+            try:
+                strat_module = importlib.import_module(f"strategies.{strat_name}")
+                if hasattr(strat_module, 'execute'):
+                    strat_markers = strat_module.execute(df, candles, ob_fvg_data, tq_history, config)
+                    if strat_markers:
+                        trades.extend(strat_markers)
+                        print(f"   ↳ Stratégie {strat_name} : {len(strat_markers)} marqueurs")
+            except Exception as e:
+                print(f"   ⚠️ Erreur stratégie {strat_name}: {e}")
 
 # ── INJECTION ─────────────────────────────────────────────────
 html = open(TEMPLATE, encoding="utf-8").read()
