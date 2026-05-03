@@ -12,7 +12,7 @@ TIMEZONE = 'Europe/Zurich'
 
 SYMBOL    = "NZDJPY"
 DATE_FROM = "2026-02-01"
-DATE_TO   = "2026-05-01"
+DATE_TO   = "2027-01-01"
 TIMEFRAME = "M30"
 
 
