@@ -105,9 +105,16 @@ if config.INDICATORS.get('ob_fvg', False):
         if ob:
             ob['start_time']  = candles[ob['start_idx']]['time']
             
-            # Extension de l'OB de X jours
+            # Extension de l'OB de X jours (en nombre de bougies)
             ext_days = config.OB_DETECTION.get('ob_extension_days', 3)
-            ob['end_time']    = candles[ob['end_idx']]['time'] + (ext_days * 24 * 60 * 60)
+            tf = getattr(config, 'TIMEFRAME', 'M30')
+            candles_per_day = 48
+            if tf == "H1": candles_per_day = 24
+            elif tf == "H4": candles_per_day = 6
+            elif tf == "D1": candles_per_day = 1
+            
+            ext_idx = min(len(candles) - 1, ob['end_idx'] + int(ext_days * candles_per_day))
+            ob['end_time']    = candles[ext_idx]['time']
             
         ob_fvg_data.append({"fvg": fvg, "ob": ob})
         
@@ -152,6 +159,31 @@ html = html.replace("{{timeframe}}", json.dumps(config.TIMEFRAME))
 html = html.replace("{{trade_boxes}}", json.dumps(trade_boxes))
 html = html.replace("{{ob_fvg_data}}", json.dumps(ob_fvg_data))
 html = html.replace("{{fvg_data}}", json.dumps(fvg_data))
+
+ob_colors_js = "{"
+for m in [1, 2, 3]:
+    cfg_m = config.OB_DETECTION.get("visuals", {}).get(f"method_{m}", {})
+    def hex_to_rgba(hex_color, opacity):
+        hex_color = hex_color.lstrip('#')
+        try:
+            r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+            return f"rgba({r}, {g}, {b}, {opacity})"
+        except:
+            return hex_color
+            
+    bull_c = cfg_m.get("bullish_color", "#00E676")
+    bull_o = cfg_m.get("bullish_opacity", 0.2)
+    bear_c = cfg_m.get("bearish_color", "#FF1744")
+    bear_o = cfg_m.get("bearish_opacity", 0.2)
+    
+    ob_colors_js += f"""
+    {m}: {{
+        bullish: {{ fill: '{hex_to_rgba(bull_c, bull_o)}', border: '{bull_c}' }},
+        bearish: {{ fill: '{hex_to_rgba(bear_c, bear_o)}', border: '{bear_c}' }}
+    }},"""
+ob_colors_js += "}"
+
+html = html.replace("{{ob_colors}}", ob_colors_js)
 
 open(OUTPUT, "w", encoding="utf-8").write(html)
 # webbrowser.open(f"file://{OUTPUT}")

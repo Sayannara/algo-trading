@@ -292,7 +292,7 @@
         width:  window.innerWidth,
         height: window.innerHeight,
         layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
-        grid:   { vertLines: { color: '#1e2230' }, horzLines: { color: '#1e2230' } },
+        grid:   { vertLines: { visible: false }, horzLines: { visible: false } },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
         timeScale: { timeVisible: true, secondsVisible: false, borderColor: '#2a2e39' },
         rightPriceScale: { borderColor: '#2a2e39' },
@@ -383,20 +383,7 @@
     // 7. OB + FVG
     // ─────────────────────────────────────────────────────────────
     if (typeof OB_FVG_DATA !== 'undefined' && OB_FVG_DATA.length > 0) {
-      const METHOD_COLORS = {
-        1: {
-          bullish: { fill: 'rgba(41, 98, 255, 0.2)', border: '#2962FF' },
-          bearish: { fill: 'rgba(255, 23, 68, 0.2)', border: '#FF1744' }
-        },
-        2: {
-          bullish: { fill: 'rgba(0, 188, 212, 0.25)', border: '#00BCD4' },
-          bearish: { fill: 'rgba(255, 109, 0, 0.25)', border: '#FF6D00' }
-        },
-        3: {
-          bullish: { fill: 'rgba(0, 230, 118, 0.3)', border: '#00E676' },
-          bearish: { fill: 'rgba(213, 0, 249, 0.3)', border: '#D500F9' }
-        }
-      };
+      const METHOD_COLORS = {{ob_colors}};
 
       OB_FVG_DATA.forEach(pair => {
         const fvg = pair.fvg;
