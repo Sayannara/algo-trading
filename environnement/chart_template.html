@@ -75,6 +75,7 @@
     const TRADE_BOXES  = {{trade_boxes}};
     const OB_FVG_DATA  = {{ob_fvg_data}};
     const FVG_DATA     = {{fvg_data}};
+    const SYMBOL       = {{symbol}};
 
     // ─────────────────────────────────────────────────────────────
     // RECHERCHE SCORE PAR TIMESTAMP
@@ -131,8 +132,26 @@
       update() {
         const s  = this._src;
         const ts = s._chart.timeScale();
-        s._cx1 = ts.timeToCoordinate(s._t1);
-        s._cx2 = ts.timeToCoordinate(s._t2);
+        
+        // Helper pour trouver le coordinate le plus proche si null
+        const getCoord = (time) => {
+          let c = ts.timeToCoordinate(time);
+          if (c !== null) return c;
+          
+          if (typeof CANDLES !== 'undefined' && CANDLES.length > 0) {
+            let closest = CANDLES[0].time;
+            let minDist = Math.abs(closest - time);
+            for(let i=1; i<CANDLES.length; i++) {
+               const d = Math.abs(CANDLES[i].time - time);
+               if (d < minDist) { minDist = d; closest = CANDLES[i].time; }
+            }
+            return ts.timeToCoordinate(closest);
+          }
+          return null;
+        };
+
+        s._cx1 = getCoord(s._t1);
+        s._cx2 = getCoord(s._t2);
         s._cy1 = s._series.priceToCoordinate(s._p1);
         s._cy2 = s._series.priceToCoordinate(s._p2);
       }
@@ -305,10 +324,22 @@
     // ─────────────────────────────────────────────────────────────
     // 1. CANDLESTICKS
     // ─────────────────────────────────────────────────────────────
+    let pricePrecision = 5;
+    let priceMinMove = 0.00001;
+    if (typeof SYMBOL !== 'undefined' && SYMBOL.toUpperCase().includes('JPY')) {
+      pricePrecision = 3;
+      priceMinMove = 0.001;
+    }
+
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
       upColor:        '#26a69a', downColor:        '#ef5350',
       borderUpColor:  '#26a69a', borderDownColor:  '#ef5350',
       wickUpColor:    '#26a69a', wickDownColor:    '#ef5350',
+      priceFormat: {
+        type: 'price',
+        precision: pricePrecision,
+        minMove: priceMinMove,
+      }
     });
     candleSeries.setData(CANDLES);
 
@@ -401,15 +432,16 @@
           { fillColor: fvgFill, borderColor: fvgBorder, text: fvg.text || '', textColor: fvgTextCol }
         ));
 
-        // OB Box
         if (ob) {
-          const colors = METHOD_COLORS[ob.method][fvg.direction];
-          const obTextCol = colors.border;
+          const colors = METHOD_COLORS[ob.method] ? METHOD_COLORS[ob.method][fvg.direction] : {fill: 'rgba(255,255,255,0.2)', border: '#fff'};
+          const fColor = ob.fill_color || colors.fill;
+          const bColor = ob.border_color || colors.border;
+          const obTextCol = bColor;
           candleSeries.attachPrimitive(new RectPrimitive(
             chart, candleSeries,
             Number(ob.start_time), ob.top,
             Number(ob.end_time),   ob.bot,
-            { fillColor: colors.fill, borderColor: colors.border, text: ob.text || '', textColor: obTextCol }
+            { fillColor: fColor, borderColor: bColor, text: ob.text || '', textColor: obTextCol }
           ));
         }
       });

@@ -1,0 +1,9 @@
+=== RESUME BOUNCE OB ===
+Total trades: 27
+Win: 5 | Loss: 12 | BE: 10
+
+--- LONGS (14) ---
+Win: 2 | Loss: 8 | BE: 4
+
+--- SHORTS (13) ---
+Win: 3 | Loss: 4 | BE: 6

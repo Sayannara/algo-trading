@@ -22,6 +22,46 @@ https://tradingview.github.io/lightweight-charts/docs/
 
 Le prochain défi
 
+Analyser les OBs qui fonctionnent et ceux qui ne fonctionnent pas. Sur la base de cette analyse, on ajoutera les règles nécessaires pour améliorer le système.
+
+Les paramètres de trades: 1 SL à 200 ticks, un TP 3x plus grand que le SL, BE au premier RRR. Entrée une fois que l'OB est comblé. 
+
+trade 1: BE, un GAP haussier est venu combler le GAP baissier, on a légérement dépassé l'OB baissier puis on est allé au TP. Il y a eu prise de liquidité de Tokyo durant Londres. Gagnant si vente sur ChoCH après liquidité.
+
+Trade 2: perte, le GAP baisier n'a pas fait un plus bas que le précédent. Ou du moins si, car il y a eu légère prise de liquidité dans le sens inverse.
+
+Trade 3: perte, le GAP haussier n'a pas fait un plus haut que le précédent. 
+
+Trade 4: BE, atteint le ratio de 2, puis on se fait sortir par une mèche à BE, autrement, c'était gagnant.
+
+Trade 5: gagnant, un GAP haussier retourne le prix sur l'OB baissier. Il y a une prise de liquidité de Londres et Tokyo, puis gain rapidemnent, on pouvait atteindre ratio de 5.
+
+Trade 6: BE, GAP hausier et mouvement très fort haussier. Rebond sur l'OB baissier, puis rebond sur un haussier et BE.
+
+Trade 7: gagnant, prise de liquidité sur New-York, bon rebond sur OB haussier et TP fin Londres.
+
+Trade 8: BE, le mouvement avec le GAP baissier ne fait pas un plus bas que le précédent.
+
+Trade 9: BE, il y a eu un immense GAP haussier, 1879 ticks. Le prix a bien rebondi sur l'OB a touché le RRR de 1 puis est venu faire un nouveau swing haussier.
+
+Trade 10: BE, le GAP haussier n'a pas fait un plus haut que le précédent. Prise de liquidité sur New-York, BE car retour après RRR 1 sans quoi on aurait TP
+
+Trade 11: perte, le GAP haussier a fait un plus haut que le précédent. Prise de liquidité sur Tokyo par le haut et donc dans le mauvais sens.
+
+Trade 12: BE, GAP haussier fait un plus haut, puis le prix a rangé.
+
+Trade 13: BE, 3 sessions baissières avant notre trade dans la 4ème session baissière. Très gros OB qui a déjà  fonctionné avec le prix une fois dans le passé. Il y avait un autre OB un peu en-dessous.
+
+Trade 14: perte, le GAP créé un plus haut que le précédent, puis GAP baissier, prise de liquidité et perte
+
+Trade 15, rebond sur OB alors que celui-ci a déjà fonctionné 2 fois. On casse deux OB baissiers pour atteindre RRR3. C'est un peu sal par contre, entrée avec ChoCh évident.
+
+Trade 16, perte, après GAP baissier qui fait un plus bas que le précédent, le prix dans la même session revient traverser l'OB jusqu'au SL
+
+Trade 17, perte, trois sessions baissières avant notre trade dans la 4ème. L'OB haussier est cassé par un GAP bassier qui atteint notre SL. Le GAP haussier ne fait pas de plus haut. Trend quality 64%. L'OB haussier a rejeté le prix dans la session précédente.
+
+---
+
 Spécification — Détection des Order Blocks (OBs)
 Principe général
 Chaque FVG détecté sert de point d'ancrage pour rechercher son OB associé. Un seul OB est assigné par FVG, selon un ordre de priorité strict : Méthode 3 → Méthode 2 → Méthode 1. Si la méthode de plus haute priorité ne trouve rien, ou produit un OB qui chevauche le FVG au-delà du seuil toléré, on descend automatiquement à la méthode suivante. L'OB est représenté par un rectangle englobant les bougies concernées. Les OBs restent toujours dessinés, même si le prix les a traversés (mitigation non traitée pour l'instant).
