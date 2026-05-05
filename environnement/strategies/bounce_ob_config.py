@@ -12,7 +12,7 @@ CONFIG = {
     "sl_margin_ticks": 200.0, 
     
     # Ratio Risk/Reward pour le Take Profit
-    "tp_rr": 3.0,
+    "tp_rr": 2.0,
     
     # Ratio Risk/Reward pour sécuriser à Break-Even (BE)
     "be_rr_trigger": 1.0,

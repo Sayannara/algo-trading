@@ -6,8 +6,8 @@
 # ══════════════════════════════════════════════════════════════
 
 TIMEZONE  = 'Europe/Zurich'
-SYMBOL    = "NZDJPY"
-DATE_FROM = "2025-02-01"
+SYMBOL    = "EURCAD"
+DATE_FROM = "2020-01-01"
 DATE_TO   = "2027-01-01"
 
 # ══════════════════════════════════════════════════════════════
@@ -54,12 +54,12 @@ LTF = {
     'use_decay': True},
     "OB_DETECTION": {   'cascade_on_overlap': True,
     'debug': {'highlight_ob_candles': True, 'show_detection_labels': True},
-    'fvg_min_valeur': 200.0,
-    'fvg_mintick': 0.001,
+    'fvg_min_valeur': 100.0,
+    'fvg_mintick': 1e-05,
     'fvg_type_mesure': 'Ticks',
     'max_gap_ob_fvg': 3,
-    'max_overlap_ob_fvg_ticks': 20,
-    'method_1': {'max_overlap_ticks': 80, 'max_search_candles': 5},
+    'max_overlap_ob_fvg_ticks': 10,
+    'method_1': {'max_overlap_ticks': 50, 'max_search_candles': 5},
     'method_1_enabled': True,
     'method_2': {'atr_len': 14, 'atr_mult': 1.2, 'min_candles': 3},
     'method_2_enabled': True,
@@ -84,7 +84,7 @@ LTF = {
                                    'bullish_color': '#00E676',
                                    'bullish_opacity': 0.0},
                    'show_method_label': True}},
-    "FVG": {'min_valeur': 150.0, 'mintick': 1e-05, 'show_labels': True, 'type_mesure': 'Ticks'}
+    "FVG": {'min_valeur': 100.0, 'mintick': 1e-05, 'show_labels': True, 'type_mesure': 'Ticks'}
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -132,12 +132,12 @@ HTF = {
     'use_decay': True},
     "OB_DETECTION": {   'cascade_on_overlap': True,
     'debug': {'highlight_ob_candles': True, 'show_detection_labels': True},
-    'fvg_min_valeur': 200.0,
-    'fvg_mintick': 0.001,
+    'fvg_min_valeur': 100.0,
+    'fvg_mintick': 1e-05,
     'fvg_type_mesure': 'Ticks',
     'max_gap_ob_fvg': 3,
-    'max_overlap_ob_fvg_ticks': 20,
-    'method_1': {'max_overlap_ticks': 80, 'max_search_candles': 5},
+    'max_overlap_ob_fvg_ticks': 10,
+    'method_1': {'max_overlap_ticks': 50, 'max_search_candles': 5},
     'method_1_enabled': True,
     'method_2': {'atr_len': 14, 'atr_mult': 1.2, 'min_candles': 3},
     'method_2_enabled': True,
@@ -162,5 +162,5 @@ HTF = {
                                    'bullish_color': '#1B5E20',
                                    'bullish_opacity': 0.3},
                    'show_method_label': True}},
-    "FVG": {'min_valeur': 150.0, 'mintick': 1e-05, 'show_labels': True, 'type_mesure': 'Ticks'}
+    "FVG": {'min_valeur': 100.0, 'mintick': 1e-05, 'show_labels': True, 'type_mesure': 'Ticks'}
 }

@@ -295,7 +295,8 @@ def execute(df, candles, ob_fvg_data, tq_history, config, ctx=None):
                             "sl_fill":"rgba(239,83,80,0.3)"}})
                     break
 
-    _write_html(stats, trades_log, tp_rr)
+    _write_html(stats, trades_log, tp_rr, config.SYMBOL)
+    _write_csv(trades_log)
     return {"markers": markers, "trade_boxes": trade_boxes}
 
 
@@ -310,10 +311,23 @@ def _status_badge(s):
     colors = {"WIN":"#00c853","LOSS":"#f44336","BE":"#ff9800"}
     return f'<span class="badge" style="background:{colors.get(s,"#999")}">{s}</span>'
 
-def _write_html(stats, trades, tp_rr):
+def _write_csv(trades):
+    import csv
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bounce_ob_trades.csv")
+    if not trades: return
+    keys = trades[0].keys()
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        dict_writer = csv.DictWriter(f, fieldnames=keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(trades)
+
+def _write_html(stats, trades, tp_rr, symbol):
     T = stats["total"]
     wr = round(stats["win"]/T*100,1) if T else 0
     net = stats["pnl_rr"]
+    
+    l_wr = round(stats['long_win']/stats['long_total']*100,1) if stats['long_total']>0 else 0
+    s_wr = round(stats['short_win']/stats['short_total']*100,1) if stats['short_total']>0 else 0
 
     rows = ""
     for t in trades:
@@ -332,21 +346,65 @@ def _write_html(stats, trades, tp_rr):
           <td class="center">{t['duration']}</td>
           <td class="center">{t['session']}</td>
           <td class="center">{t['tq']:.1f}%</td>
-          <td class="center">{_bool_cell(t['fvg_extreme'])}<br><small>{t['fvg_detail']}</small></td>
           <td class="center">{t['fvg_ticks']}</td>
           <td class="center">{_bool_cell(t['liq_in'], '✅ Prise', '❌ Non')}</td>
           <td class="center">{_bool_cell(t['liq_inv'], '⚠️ Oui', '✅ Non')}</td>
-          <td class="center">{t['ob_reuses']}</td>
           <td class="center">{t['ob_method']}</td>
-          <td class="center">{len(t['comp_obs'])}</td>
-          <td class="detail"><small>{comp}</small></td>
         </tr>"""
+
+    # PnL Curve & Max Consecutive SL & Session Stats & Drawdown
+    pnl_data = [0.0]
+    cumulative = 0.0
+    max_sl = 0
+    cur_sl = 0
+    
+    # Drawdown calculation
+    peak = 0.0
+    max_dd = 0.0
+    
+    # Session stats
+    ses_stats = {
+        "London":   {"t":0, "w":0},
+        "New York": {"t":0, "w":0},
+        "Tokyo":    {"t":0, "w":0}
+    }
+    
+    for t in trades:
+        cumulative += t['pnl_rr']
+        pnl_data.append(round(cumulative, 2))
+        
+        # Max DD
+        if cumulative > peak: peak = cumulative
+        dd = peak - cumulative
+        if dd > max_dd: max_dd = dd
+
+        # Session
+        s_name = t['session']
+        if s_name in ses_stats:
+            ses_stats[s_name]["t"] += 1
+            if t['status'] == 'WIN': ses_stats[s_name]["w"] += 1
+        
+        if t['status'] == 'LOSS':
+            cur_sl += 1
+            max_sl = max(max_sl, cur_sl)
+        elif t['status'] == 'WIN':
+            cur_sl = 0
+
+    # Winrates sessions
+    for k in ses_stats:
+        total = ses_stats[k]["t"]
+        win = ses_stats[k]["w"]
+        ses_stats[k]["wr"] = round(win/total*100, 1) if total > 0 else 0
 
     html = f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <title>Rapport Bounce OB</title>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ background: #0f1117; color: #d1d4dc; font-family: 'Segoe UI', sans-serif; font-size: 13px; padding: 24px; }}
@@ -383,10 +441,16 @@ def _write_html(stats, trades, tp_rr):
   .no  {{ color:#f44336; }}
   .detail {{ max-width:200px; word-break:break-word; }}
   .table-wrap {{ overflow-x:auto; border-radius:10px; border:1px solid #2a2e3d; }}
+  /* DataTables Dark Mode Fix */
+  .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate {{ color: #9ca3af !important; }}
+  .dataTables_wrapper .dataTables_length select, .dataTables_wrapper .dataTables_filter input {{ background-color: #1a1e2b !important; color: #fff !important; border: 1px solid #2a2e3d !important; border-radius: 4px; padding: 4px 8px; }}
+  table.dataTable tbody tr {{ background-color: #0f1117 !important; color: #d1d4dc !important; }}
+  table.dataTable tbody tr:hover {{ background-color: #1a1e2b !important; }}
+  tfoot input {{ background: #1a1e2b; color: #fff; border: 1px solid #2a2e3d; padding: 4px; border-radius: 4px; font-size: 11px; }}
 </style>
 </head>
 <body>
-<h1>📊 Rapport Bounce OB</h1>
+<h1>📊 Rapport Bounce OB — {symbol}</h1>
 <p class="subtitle">
   {trades[0]['entry_dt'].strftime('%Y-%m-%d') if trades else '?'} →
   {trades[-1]['exit_dt'].strftime('%Y-%m-%d') if trades else '?'}
@@ -394,6 +458,8 @@ def _write_html(stats, trades, tp_rr):
 </p>
 
 <div class="summary">
+  <div class="card"><div class="label">Total Trades</div>
+    <div class="value">{T}</div></div>
   <div class="card"><div class="label">PnL Net (RR)</div>
     <div class="value {'pos' if net>0 else 'neg' if net<0 else 'neu'}">{net:+.2f}</div></div>
   <div class="card"><div class="label">Win Rate</div>
@@ -404,10 +470,14 @@ def _write_html(stats, trades, tp_rr):
     <div class="value neg">{stats['loss']}</div></div>
   <div class="card"><div class="label">🔶 Break-Even</div>
     <div class="value neu">{stats['be']}</div></div>
-  <div class="card"><div class="label">RR Win brut</div>
-    <div class="value pos">+{stats['win']*tp_rr:.1f}</div></div>
-  <div class="card"><div class="label">RR Loss brut</div>
-    <div class="value neg">-{stats['loss']:.1f}</div></div>
+  <div class="card"><div class="label">🔴 Max SL Consécutifs</div>
+    <div class="value neg">{max_sl}</div></div>
+  <div class="card"><div class="label">📉 Max Drawdown</div>
+    <div class="value neg">-{max_dd:.1f} RR</div></div>
+</div>
+
+<div class="card" style="width:100%; height:300px; margin-bottom:28px; padding:15px;">
+  <canvas id="pnlChart"></canvas>
 </div>
 
 <div class="split">
@@ -416,18 +486,36 @@ def _write_html(stats, trades, tp_rr):
     <div class="row"><span class="k">✅ Win</span><span>{stats['long_win']}</span></div>
     <div class="row"><span class="k">❌ Loss</span><span>{stats['long_loss']}</span></div>
     <div class="row"><span class="k">🔶 BE</span><span>{stats['long_be']}</span></div>
+    <div class="row" style="border-top:1px dashed #444; margin-top:5px; padding-top:5px;"><span class="k">Win Rate</span><span class="pos">{l_wr}%</span></div>
   </div>
   <div class="card">
     <div class="label">Shorts — {stats['short_total']} trades</div>
     <div class="row"><span class="k">✅ Win</span><span>{stats['short_win']}</span></div>
     <div class="row"><span class="k">❌ Loss</span><span>{stats['short_loss']}</span></div>
     <div class="row"><span class="k">🔶 BE</span><span>{stats['short_be']}</span></div>
+    <div class="row" style="border-top:1px dashed #444; margin-top:5px; padding-top:5px;"><span class="k">Win Rate</span><span class="pos">{s_wr}%</span></div>
+  </div>
+</div>
+
+<div class="section">Performance par Session</div>
+<div class="summary">
+  <div class="card">
+    <div class="label">London</div>
+    <div class="value" style="font-size:20px;">{ses_stats['London']['wr']}% <small style="display:inline; font-size:12px; color:#6c7280;">({ses_stats['London']['t']} trades)</small></div>
+  </div>
+  <div class="card">
+    <div class="label">New York</div>
+    <div class="value" style="font-size:20px;">{ses_stats['New York']['wr']}% <small style="display:inline; font-size:12px; color:#6c7280;">({ses_stats['New York']['t']} trades)</small></div>
+  </div>
+  <div class="card">
+    <div class="label">Tokyo</div>
+    <div class="value" style="font-size:20px;">{ses_stats['Tokyo']['wr']}% <small style="display:inline; font-size:12px; color:#6c7280;">({ses_stats['Tokyo']['t']} trades)</small></div>
   </div>
 </div>
 
 <div class="section">Détail par trade</div>
-<div class="table-wrap">
-<table>
+<div class="table-wrap" style="background:#1a1e2b; padding:15px;">
+<table id="tradeTable" class="display nowrap">
 <thead>
 <tr>
   <th>#</th>
@@ -436,22 +524,87 @@ def _write_html(stats, trades, tp_rr):
   <th>Date Entrée</th>
   <th>Durée</th>
   <th>Session</th>
-  <th>Trend Quality</th>
-  <th>GAP extrême ?</th>
-  <th>Taille GAP (ticks)</th>
-  <th>Liquidité dans le sens du trade prise ?</th>
-  <th>Liquidité inverse prise ?</th>
-  <th>OB déjà utilisé (fois)</th>
-  <th>Méthode OB</th>
-  <th>OBs bloquants vers TP</th>
-  <th>Détail OBs bloquants</th>
+  <th>TQ</th>
+  <th>Taille GAP</th>
+  <th>Liq. Sens</th>
+  <th>Liq. Inv.</th>
+  <th>Méthode</th>
 </tr>
 </thead>
 <tbody>
 {rows}
 </tbody>
+<tfoot>
+<tr>
+  <th></th>
+  <th><input type="text" placeholder="Filtrer.." style="width:100%"></th>
+  <th><input type="text" placeholder="Filtrer.." style="width:100%"></th>
+  <th><input type="text" placeholder="Filtrer.." style="width:100%"></th>
+  <th></th>
+  <th><input type="text" placeholder="Filtrer.." style="width:100%"></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+  <th></th>
+</tr>
+</tfoot>
 </table>
 </div>
+
+<script>
+$(document).ready(function() {{
+    var table = $('#tradeTable').DataTable({{
+        "language": {{ "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json" }},
+        "pageLength": 25,
+        "order": [[0, "desc"]],
+        "dom": '<"top"fl>rt<"bottom"ip><"clear">'
+    }});
+
+    // Filtres par colonnes
+    table.columns().every(function () {{
+        var that = this;
+        $('input', this.footer()).on('keyup change clear', function () {{
+            if (that.search() !== this.value) {{
+                that.search(this.value).draw();
+            }}
+        }});
+    }});
+
+    // Graphique PnL
+    var ctx = document.getElementById('pnlChart').getContext('2d');
+    new Chart(ctx, {{
+        type: 'line',
+        data: {{
+            labels: Array.from({{length: {len(pnl_data)}}}, (_, i) => i),
+            datasets: [{{
+                label: 'PnL Cumulé (RR)',
+                data: {pnl_data},
+                borderColor: '#00c853',
+                backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1,
+                pointRadius: 0
+            }}]
+        }},
+        options: {{
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {{
+                x: {{ display: false }},
+                y: {{ 
+                    grid: {{ color: '#2a2e3d' }},
+                    ticks: {{ color: '#9ca3af' }}
+                }}
+            }},
+            plugins: {{
+                legend: {{ display: false }}
+            }}
+        }}
+    }});
+}});
+</script>
 </body>
 </html>"""
 
