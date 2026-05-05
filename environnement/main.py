@@ -122,7 +122,7 @@ def process_tf(cfg):
         print(f"   ↳ {cfg.TIMEFRAME} FVG : {len(fvg_data)} gaps trouvés")
 
     return {
-        "df": df, "candles": candles, "sessions_zones": sessions_zones,
+        "df": df, "candles": candles, "sessions_zones": sessions_zones, "sessions_history": sessions_history,
         "tq_score": tq_score, "tq_text": tq_text, "tq_color": tq_color, "tq_labels": tq_labels, "tq_history": tq_history,
         "trades": trades, "price_lines": price_lines, "trade_boxes": trade_boxes,
         "ob_fvg_data": ob_fvg_data, "fvg_data": fvg_data

@@ -53,8 +53,8 @@ def compute_sessions(df, config):
         hist.append({
             'high':       s['high'],
             'low':        s['low'],
-            'time_start': s['raw_start'],
-            'time_end':   s['raw_end'],
+            'time_start': s['time_start'],
+            'time_end':   s['time_end'],
         })
         if len(hist) > 3:
             hist.pop(0)

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rapport Bounce OB</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #d1d4dc; font-family: 'Segoe UI', sans-serif; font-size: 13px; padding: 24px; }
+  h1 { font-size: 22px; color: #fff; margin-bottom: 4px; }
+  .subtitle { color: #6c7280; font-size: 13px; margin-bottom: 24px; }
+  .summary { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .card { background: #1a1e2b; border: 1px solid #2a2e3d; border-radius: 10px; padding: 16px 24px; min-width: 150px; }
+  .card .label { font-size: 11px; color: #6c7280; text-transform: uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  .card .value { font-size: 26px; font-weight: 700; color: #fff; }
+  .card .value.pos { color: #00c853; }
+  .card .value.neg { color: #f44336; }
+  .card .value.neu { color: #ff9800; }
+  .section { font-size: 11px; color: #6c7280; text-transform: uppercase; letter-spacing:1px; margin: 20px 0 8px; }
+  .split { display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap; }
+  .split .card { flex:1; min-width:200px; }
+  .split .card .row { display:flex; justify-content:space-between; font-size:13px; padding:3px 0; border-bottom:1px solid #2a2e3d; }
+  .split .card .row:last-child { border:none; }
+  .split .card .row .k { color:#9ca3af; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { background:#1a1e2b; color:#9ca3af; font-size:11px; text-transform:uppercase; letter-spacing:.5px; padding:10px 8px; text-align:left; border-bottom:2px solid #2a2e3d; position:sticky; top:0; z-index:10; white-space:nowrap; }
+  tbody tr { border-bottom:1px solid #1e2233; transition:background .15s; }
+  tbody tr:hover { background:#1a1e2b; }
+  td { padding:8px; vertical-align:middle; }
+  td.center { text-align:center; }
+  td small { color:#6c7280; font-size:11px; display:block; margin-top:2px; }
+  .dir { font-weight:700; font-size:12px; padding:2px 8px; border-radius:4px; }
+  .dir.long  { background:rgba(0,200,83,.15);  color:#00c853; }
+  .dir.short { background:rgba(244,67,54,.15); color:#f44336; }
+  .badge { font-size:11px; font-weight:700; padding:3px 8px; border-radius:12px; color:#fff; }
+  .pos { color:#00c853; font-weight:700; }
+  .neg { color:#f44336; font-weight:700; }
+  .neu { color:#ff9800; font-weight:700; }
+  .yes { color:#00c853; }
+  .no  { color:#f44336; }
+  .detail { max-width:200px; word-break:break-word; }
+  .table-wrap { overflow-x:auto; border-radius:10px; border:1px solid #2a2e3d; }
+</style>
+</head>
+<body>
+<h1>📊 Rapport Bounce OB</h1>
+<p class="subtitle">
+  2025-02-07 →
+  2026-05-04
+  &nbsp;·&nbsp; 29 trades
+</p>
+
+<div class="summary">
+  <div class="card"><div class="label">PnL Net (RR)</div>
+    <div class="value pos">+5.00</div></div>
+  <div class="card"><div class="label">Win Rate</div>
+    <div class="value">20.7%</div></div>
+  <div class="card"><div class="label">✅ Gagnants</div>
+    <div class="value pos">6</div></div>
+  <div class="card"><div class="label">❌ Pertes</div>
+    <div class="value neg">13</div></div>
+  <div class="card"><div class="label">🔶 Break-Even</div>
+    <div class="value neu">10</div></div>
+  <div class="card"><div class="label">RR Win brut</div>
+    <div class="value pos">+18.0</div></div>
+  <div class="card"><div class="label">RR Loss brut</div>
+    <div class="value neg">-13.0</div></div>
+</div>
+
+<div class="split">
+  <div class="card">
+    <div class="label">Longs — 14 trades</div>
+    <div class="row"><span class="k">✅ Win</span><span>2</span></div>
+    <div class="row"><span class="k">❌ Loss</span><span>8</span></div>
+    <div class="row"><span class="k">🔶 BE</span><span>4</span></div>
+  </div>
+  <div class="card">
+    <div class="label">Shorts — 15 trades</div>
+    <div class="row"><span class="k">✅ Win</span><span>4</span></div>
+    <div class="row"><span class="k">❌ Loss</span><span>5</span></div>
+    <div class="row"><span class="k">🔶 BE</span><span>6</span></div>
+  </div>
+</div>
+
+<div class="section">Détail par trade</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>#</th>
+  <th>Direction</th>
+  <th>Résultat</th>
+  <th>Date Entrée</th>
+  <th>Durée</th>
+  <th>Session</th>
+  <th>Trend Quality</th>
+  <th>GAP extrême ?</th>
+  <th>Taille GAP (ticks)</th>
+  <th>Liquidité dans le sens du trade prise ?</th>
+  <th>Liquidité inverse prise ?</th>
+  <th>OB déjà utilisé (fois)</th>
+  <th>Méthode OB</th>
+  <th>OBs bloquants vers TP</th>
+  <th>Détail OBs bloquants</th>
+</tr>
+</thead>
+<tbody>
+
+        <tr>
+          <td class="center">1</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-02-07 05:10</td>
+          <td class="center">61</td>
+          <td class="center">Tokyo</td>
+          <td class="center">35.3%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Premier FVG</small></td>
+          <td class="center">254</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">14</td>
+          <td class="center">1</td>
+          <td class="center">9</td>
+          <td class="detail"><small>OB Haussier 85.936–86.089<br>OB Haussier 85.672–85.858<br>OB Haussier 86.132–86.182<br>OB Haussier 85.910–86.013<br>OB Haussier 85.947–86.021<br>OB Haussier 85.897–85.951<br>OB Haussier 85.632–85.746<br>OB Haussier 85.988–86.022<br>OB Haussier 85.947–86.164</small></td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-02-10 02:00</td>
+          <td class="center">24</td>
+          <td class="center">Tokyo</td>
+          <td class="center">34.4%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 85.440 vs préc. 85.887</small></td>
+          <td class="center">179</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">6</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Haussier 85.189–85.263<br>OB Haussier 85.507–85.551<br>OB Haussier 85.506–85.579<br>OB Haussier 85.073–85.350<br>OB Haussier 85.152–85.251<br>OB Haussier 85.175–85.276<br>OB Haussier 85.244–85.328</small></td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-02-13 16:50</td>
+          <td class="center">58</td>
+          <td class="center">New York</td>
+          <td class="center">59.3%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Top 86.882 vs préc. 86.900</small></td>
+          <td class="center">275</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">7</td>
+          <td class="center">1</td>
+          <td class="center">9</td>
+          <td class="detail"><small>OB Baissier 86.527–86.636<br>OB Baissier 87.032–87.116<br>OB Baissier 86.877–86.982<br>OB Baissier 86.874–86.974<br>OB Baissier 86.953–87.095<br>OB Baissier 86.822–86.903<br>OB Baissier 87.019–87.088<br>OB Baissier 86.590–86.726<br>OB Baissier 86.900–87.016</small></td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-02-13 11:20</td>
+          <td class="center">9</td>
+          <td class="center">London</td>
+          <td class="center">59.3%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 87.274 vs préc. 86.882</small></td>
+          <td class="center">247</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">22</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 87.289–87.379<br>OB Baissier 87.032–87.116<br>OB Baissier 87.555–87.627<br>OB Baissier 87.097–87.182<br>OB Baissier 87.019–87.088<br>OB Baissier 87.163–87.297<br>OB Baissier 87.182–87.363</small></td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2025-03-03 15:00</td>
+          <td class="center">97</td>
+          <td class="center">New York</td>
+          <td class="center">34.8%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 84.388 vs préc. 85.223</small></td>
+          <td class="center">308</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">7</td>
+          <td class="center">1</td>
+          <td class="center">3</td>
+          <td class="detail"><small>OB Haussier 83.983–84.164<br>OB Haussier 84.052–84.215<br>OB Haussier 84.392–84.434</small></td>
+        </tr>
+        <tr>
+          <td class="center">6</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-03-04 23:20</td>
+          <td class="center">11</td>
+          <td class="center">New York</td>
+          <td class="center">25.9%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 83.895 vs préc. 84.388</small></td>
+          <td class="center">571</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">9</td>
+          <td class="center">1</td>
+          <td class="center">4</td>
+          <td class="detail"><small>OB Haussier 83.983–84.164<br>OB Haussier 83.884–84.070<br>OB Haussier 84.052–84.215<br>OB Haussier 84.392–84.434</small></td>
+        </tr>
+        <tr>
+          <td class="center">7</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2025-03-27 02:25</td>
+          <td class="center">125</td>
+          <td class="center">Tokyo</td>
+          <td class="center">71.4%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Top 86.371 vs préc. 86.840</small></td>
+          <td class="center">252</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">9</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 86.138–86.236<br>OB Baissier 86.026–86.154<br>OB Baissier 86.341–86.656<br>OB Baissier 86.147–86.402<br>OB Baissier 85.937–85.983<br>OB Baissier 86.150–86.225<br>OB Baissier 86.393–86.531</small></td>
+        </tr>
+        <tr>
+          <td class="center">8</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-04-09 12:55</td>
+          <td class="center">35</td>
+          <td class="center">London</td>
+          <td class="center">28.0%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 80.342 vs préc. 82.109</small></td>
+          <td class="center">200</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">7</td>
+          <td class="center">1</td>
+          <td class="center">2</td>
+          <td class="detail"><small>OB Haussier 80.473–80.819<br>OB Haussier 80.689–80.797</small></td>
+        </tr>
+        <tr>
+          <td class="center">9</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-04-11 23:05</td>
+          <td class="center">35</td>
+          <td class="center">New York</td>
+          <td class="center">42.1%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Bot 83.118 vs préc. 80.342</small></td>
+          <td class="center">361</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">12</td>
+          <td class="center">1</td>
+          <td class="center">1</td>
+          <td class="detail"><small>OB Haussier 83.543–83.707</small></td>
+        </tr>
+        <tr>
+          <td class="center">10</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-04-17 00:05</td>
+          <td class="center">22</td>
+          <td class="center">Tokyo</td>
+          <td class="center">61.2%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 84.456 vs préc. 82.778</small></td>
+          <td class="center">241</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">13</td>
+          <td class="center">2</td>
+          <td class="center">4</td>
+          <td class="detail"><small>OB Baissier 84.466–84.529<br>OB Baissier 84.300–84.593<br>OB Baissier 84.516–84.721<br>OB Baissier 84.323–84.437</small></td>
+        </tr>
+        <tr>
+          <td class="center">11</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-04-25 13:10</td>
+          <td class="center">33</td>
+          <td class="center">London</td>
+          <td class="center">76.5%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 85.911 vs préc. 84.814</small></td>
+          <td class="center">360</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">20</td>
+          <td class="center">1</td>
+          <td class="center">5</td>
+          <td class="detail"><small>OB Baissier 85.585–85.652<br>OB Baissier 86.026–86.154<br>OB Baissier 85.640–85.731<br>OB Baissier 85.743–85.801<br>OB Baissier 85.937–85.983</small></td>
+        </tr>
+        <tr>
+          <td class="center">12</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-05-02 12:55</td>
+          <td class="center">156</td>
+          <td class="center">London</td>
+          <td class="center">60.8%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 86.243 vs préc. 85.911</small></td>
+          <td class="center">222</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">32</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 86.138–86.236<br>OB Baissier 86.527–86.636<br>OB Baissier 86.026–86.154<br>OB Baissier 86.341–86.656<br>OB Baissier 86.147–86.402<br>OB Baissier 86.150–86.225<br>OB Baissier 86.393–86.531</small></td>
+        </tr>
+        <tr>
+          <td class="center">13</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2025-05-15 02:25</td>
+          <td class="center">41</td>
+          <td class="center">Tokyo</td>
+          <td class="center">56.7%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 86.826 vs préc. 86.420</small></td>
+          <td class="center">214</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">10</td>
+          <td class="center">3</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 86.527–86.636<br>OB Baissier 86.341–86.656<br>OB Baissier 86.877–86.982<br>OB Baissier 86.874–86.974<br>OB Baissier 86.393–86.531<br>OB Baissier 86.822–86.903<br>OB Baissier 86.590–86.726</small></td>
+        </tr>
+        <tr>
+          <td class="center">14</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-05-29 18:45</td>
+          <td class="center">83</td>
+          <td class="center">New York</td>
+          <td class="center">68.6%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 86.743 vs préc. 85.657</small></td>
+          <td class="center">430</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">3</td>
+          <td class="center">1</td>
+          <td class="center">5</td>
+          <td class="detail"><small>OB Baissier 86.527–86.636<br>OB Baissier 86.341–86.656<br>OB Baissier 86.393–86.531<br>OB Baissier 86.822–86.903<br>OB Baissier 86.590–86.726</small></td>
+        </tr>
+        <tr>
+          <td class="center">15</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2025-06-03 12:20</td>
+          <td class="center">82</td>
+          <td class="center">London</td>
+          <td class="center">66.8%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Top 86.008 vs préc. 86.743</small></td>
+          <td class="center">262</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">5</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 86.138–86.236<br>OB Baissier 86.026–86.154<br>OB Baissier 85.640–85.731<br>OB Baissier 86.147–86.402<br>OB Baissier 85.743–85.801<br>OB Baissier 85.937–85.983<br>OB Baissier 86.150–86.225</small></td>
+        </tr>
+        <tr>
+          <td class="center">16</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-08-04 05:10</td>
+          <td class="center">16</td>
+          <td class="center">Tokyo</td>
+          <td class="center">43.2%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 86.951 vs préc. 87.597</small></td>
+          <td class="center">216</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">11</td>
+          <td class="center">1</td>
+          <td class="center">6</td>
+          <td class="detail"><small>OB Haussier 86.497–86.587<br>OB Haussier 86.442–86.607<br>OB Haussier 86.960–87.027<br>OB Haussier 86.277–86.629<br>OB Haussier 86.721–86.899<br>OB Haussier 86.742–86.865</small></td>
+        </tr>
+        <tr>
+          <td class="center">17</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-10-10 20:00</td>
+          <td class="center">1</td>
+          <td class="center">New York</td>
+          <td class="center">64.2%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 88.103 vs préc. 86.744</small></td>
+          <td class="center">513</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">1</td>
+          <td class="center">1</td>
+          <td class="center">7</td>
+          <td class="detail"><small>OB Baissier 87.631–87.682<br>OB Baissier 87.555–87.627<br>OB Baissier 87.905–87.944<br>OB Baissier 87.585–87.656<br>OB Baissier 87.712–87.794<br>OB Baissier 87.662–87.854<br>OB Baissier 88.025–88.082</small></td>
+        </tr>
+        <tr>
+          <td class="center">18</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-10-14 09:05</td>
+          <td class="center">17</td>
+          <td class="center">London</td>
+          <td class="center">58.3%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Top 87.077 vs préc. 88.103</small></td>
+          <td class="center">236</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">11</td>
+          <td class="center">1</td>
+          <td class="center">11</td>
+          <td class="detail"><small>OB Baissier 87.289–87.379<br>OB Baissier 87.032–87.116<br>OB Baissier 86.877–86.982<br>OB Baissier 86.874–86.974<br>OB Baissier 86.953–87.095<br>OB Baissier 87.097–87.182<br>OB Baissier 86.822–86.903<br>OB Baissier 87.019–87.088<br>OB Baissier 87.163–87.297<br>OB Baissier 87.182–87.363<br>OB Baissier 86.900–87.016</small></td>
+        </tr>
+        <tr>
+          <td class="center">19</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-10-28 09:15</td>
+          <td class="center">41</td>
+          <td class="center">London</td>
+          <td class="center">70.4%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 87.986 vs préc. 86.443</small></td>
+          <td class="center">145</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">22</td>
+          <td class="center">3</td>
+          <td class="center">6</td>
+          <td class="detail"><small>OB Baissier 88.284–88.359<br>OB Baissier 88.158–88.262<br>OB Baissier 87.905–87.944<br>OB Baissier 88.145–88.269<br>OB Baissier 88.162–88.224<br>OB Baissier 88.025–88.082</small></td>
+        </tr>
+        <tr>
+          <td class="center">20</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-11-05 06:30</td>
+          <td class="center">34</td>
+          <td class="center">Tokyo</td>
+          <td class="center">43.6%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 86.363 vs préc. 86.924</small></td>
+          <td class="center">227</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">8</td>
+          <td class="center">2</td>
+          <td class="center">9</td>
+          <td class="detail"><small>OB Haussier 86.497–86.587<br>OB Haussier 86.132–86.182<br>OB Haussier 86.442–86.607<br>OB Haussier 86.097–86.278<br>OB Haussier 86.137–86.268<br>OB Haussier 86.277–86.629<br>OB Haussier 86.264–86.337<br>OB Haussier 85.947–86.164<br>OB Haussier 86.148–86.433</small></td>
+        </tr>
+        <tr>
+          <td class="center">21</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2025-12-29 10:50</td>
+          <td class="center">52</td>
+          <td class="center">London</td>
+          <td class="center">59.9%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 91.157 vs préc. 88.369</small></td>
+          <td class="center">247</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">5</td>
+          <td class="center">1</td>
+          <td class="center">2</td>
+          <td class="detail"><small>OB Baissier 90.931–90.987<br>OB Baissier 91.095–91.268</small></td>
+        </tr>
+        <tr>
+          <td class="center">22</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2026-01-05 03:15</td>
+          <td class="center">180</td>
+          <td class="center">Tokyo</td>
+          <td class="center">38.4%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 90.296 vs préc. 90.612</small></td>
+          <td class="center">164</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">33</td>
+          <td class="center">1</td>
+          <td class="center">0</td>
+          <td class="detail"><small>—</small></td>
+        </tr>
+        <tr>
+          <td class="center">23</td>
+          <td><span class="dir long">LONG</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2026-02-06 00:35</td>
+          <td class="center">20</td>
+          <td class="center">Tokyo</td>
+          <td class="center">57.4%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Top 93.772 vs préc. 92.480</small></td>
+          <td class="center">231</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">5</td>
+          <td class="center">1</td>
+          <td class="center">8</td>
+          <td class="detail"><small>OB Baissier 93.870–94.018<br>OB Baissier 93.576–93.647<br>OB Baissier 93.612–93.880<br>OB Baissier 93.588–93.694<br>OB Baissier 93.676–93.829<br>OB Baissier 93.540–93.584<br>OB Baissier 93.928–93.994<br>OB Baissier 93.638–93.706</small></td>
+        </tr>
+        <tr>
+          <td class="center">24</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2026-02-11 16:30</td>
+          <td class="center">1</td>
+          <td class="center">New York</td>
+          <td class="center">39.8%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 92.764 vs préc. 93.855</small></td>
+          <td class="center">330</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">3</td>
+          <td class="center">1</td>
+          <td class="center">1</td>
+          <td class="detail"><small>OB Haussier 92.874–92.949</small></td>
+        </tr>
+        <tr>
+          <td class="center">25</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2026-02-16 13:15</td>
+          <td class="center">187</td>
+          <td class="center">London</td>
+          <td class="center">38.0%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 92.382 vs préc. 92.764</small></td>
+          <td class="center">303</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">13</td>
+          <td class="center">1</td>
+          <td class="center">4</td>
+          <td class="detail"><small>OB Haussier 92.089–92.251<br>OB Haussier 92.398–92.475<br>OB Haussier 92.390–92.506<br>OB Haussier 92.456–92.501</small></td>
+        </tr>
+        <tr>
+          <td class="center">26</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2026-02-16 03:30</td>
+          <td class="center">75</td>
+          <td class="center">Tokyo</td>
+          <td class="center">38.0%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 92.058 vs préc. 92.382</small></td>
+          <td class="center">163</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="yes">⚠️ Oui</span></td>
+          <td class="center">23</td>
+          <td class="center">1</td>
+          <td class="center">2</td>
+          <td class="detail"><small>OB Haussier 91.958–92.031<br>OB Haussier 92.089–92.251</small></td>
+        </tr>
+        <tr>
+          <td class="center">27</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#ff9800">BE</span></td>
+          <td>2026-04-01 05:15</td>
+          <td class="center">78</td>
+          <td class="center">Tokyo</td>
+          <td class="center">35.1%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 90.846 vs préc. 91.521</small></td>
+          <td class="center">279</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">26</td>
+          <td class="center">1</td>
+          <td class="center">1</td>
+          <td class="detail"><small>OB Haussier 90.846–90.945</small></td>
+        </tr>
+        <tr>
+          <td class="center">28</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#00c853">WIN</span></td>
+          <td>2026-05-04 07:05</td>
+          <td class="center">21</td>
+          <td class="center">Tokyo</td>
+          <td class="center">37.7%</td>
+          <td class="center"><span class="yes">✅ Oui</span><br><small>Bot 92.322 vs préc. 92.364</small></td>
+          <td class="center">340</td>
+          <td class="center"><span class="yes">✅ Prise</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">11</td>
+          <td class="center">3</td>
+          <td class="center">3</td>
+          <td class="detail"><small>OB Haussier 92.398–92.475<br>OB Haussier 92.390–92.506<br>OB Haussier 92.456–92.501</small></td>
+        </tr>
+        <tr>
+          <td class="center">29</td>
+          <td><span class="dir short">SHORT</span></td>
+          <td><span class="badge" style="background:#f44336">LOSS</span></td>
+          <td>2026-05-04 06:40</td>
+          <td class="center">13</td>
+          <td class="center">Tokyo</td>
+          <td class="center">37.7%</td>
+          <td class="center"><span class="no">❌ Non</span><br><small>Bot 92.417 vs préc. 92.322</small></td>
+          <td class="center">276</td>
+          <td class="center"><span class="no">❌ Non</span></td>
+          <td class="center"><span class="no">✅ Non</span></td>
+          <td class="center">13</td>
+          <td class="center">1</td>
+          <td class="center">4</td>
+          <td class="detail"><small>OB Haussier 92.089–92.251<br>OB Haussier 92.398–92.475<br>OB Haussier 92.390–92.506<br>OB Haussier 92.456–92.501</small></td>
+        </tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>

@@ -11,9 +11,11 @@ Sur la base de cet environnement, je veux pouvoir le dupliquer et chaque fois aj
 La stratégie va ensuite utiliser des éléments de l'environnement pour afficher les tardes et éléments graphiques pour le suivre.
 
 
-Pense-bien que tu as accès à mon GIT.
+
  
 ---
+
+Pense bien à toujours appliquer le timezone Europe/Zurich pour que le changement UTC se fasse tout seul. 
 
 Pense bien que la documentation est disponible:
 https://tradingview.github.io/lightweight-charts/docs/
@@ -60,7 +62,48 @@ Trade 16, perte, après GAP baissier qui fait un plus bas que le précédent, le
 
 Trade 17, perte, trois sessions baissières avant notre trade dans la 4ème. L'OB haussier est cassé par un GAP bassier qui atteint notre SL. Le GAP haussier ne fait pas de plus haut. Trend quality 64%. L'OB haussier a rejeté le prix dans la session précédente.
 
+Trade 18, perte, Trend quality 58%. Visuellement, on voit qu'on est dans un downtrend. Suite le trade 17, même configuration, l'OB haussier est traversé par un GAP baissier qui atteint notre SL. 
+
+Trade 19, perte, GAP haussier qui fait un plus haut. Légère prise de liquidité dans le sens inverse. On casse l'OB puis SL. Le prix ensuite remonte. C'est comme si cette session de Londres était la prise de liquidité pour toutes les prochaines.
+
+Trade 20, perte, GAB baissier, puis GAP haussier dans la même session de Tokyo et perte immédiate. 
+
+Trade 21, perte, Trend quality 60%, ça range depuis quelques sessions, l'OB venait de faire rebondire le prix dans session précédente. Le prix traverse l'OB baissier et continue à descendre beaucoup plus bas.
+
+Trade 22, BE, le GAP baissier fait un plus bas que le précédent, puis rentré dans le trade dans la même session de Toyko, on atteint RRR 2 puis BE.
+
+Trade 23, perte, Trend quality 57%, un rebond sur l'OB haussier juste avant durant la session précédente qui avait une prise de liquidité inverse. Entrée puis SL direct, et jsute après ça remonte durant trois sessions.
+
 ---
+
+QUESTIONS
+
+Direction & Contexte de Tendance
+Quelle est le score de Trend Quality au moment de l'entrée ? 
+Combien de sessions consécutives vont dans le même sens avant ton entrée ? 
+
+Validité du GAP
+Le GAP confirme-t-il un nouveau sommet/plus bas par rapport au précédent ?
+La taille du GAP est-elle cohérente ? (attention aux cas extrêmes)
+
+Prise de Liquidité
+Est-ce qu'il y a eu une prise de liquidité dans le sens du trade ? Par le bas pour un trade Long et par le haut pour un trade Short.
+Est-ce qu'il y a eu une prise de liquidité dans le sens inverse du trade ? Par le haut pour un trade Long et par le bas pour un trade Short.
+
+Qualité de l'Order Block
+L'OB a-t-il déjà fonctionné dans le passé ? Combien de fois ? 
+Si l'OB a déjà fonctionné, combien de session avant ?
+Y a-t-il un OB concurrent qui pourrait stopper le prix avant le TP ?
+
+Gestion du Trade & RRR
+Y avait-il un obstacle structurel (OB baissier à casser, zone de range) entre l'entrée et le TP ? 
+Durant quelle session le trade s'est-il déroulé ? 
+
+ChoCH / Signal d'Entrée
+Y a-t-il eu un ChoCH clair comme signal d'entrée après la prise de liquidité ?
+
+
+--- 
 
 Spécification — Détection des Order Blocks (OBs)
 Principe général
